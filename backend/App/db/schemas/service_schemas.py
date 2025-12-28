@@ -10,7 +10,7 @@ class serviceCreate(BaseModel):
 
 
 
-def serviceSchema(service)-> dict:
+def service_to_dict(service)-> dict:
     return{
         "id" : str(service["_id"]),
         "name" : service["name"],

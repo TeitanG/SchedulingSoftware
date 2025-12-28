@@ -12,7 +12,7 @@ class UserCreate(BaseModel):
     user_status : user_Status
     
 
-def UserSchema(user)-> dict:
+def user_to_dict(user)-> dict:
    return{
     "id": str(user["_id"]),  
     "role": user["role"].value if hasattr(user["role"],"value")else user["role"],  

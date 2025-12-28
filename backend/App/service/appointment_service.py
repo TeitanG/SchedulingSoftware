@@ -3,7 +3,7 @@ from App.core.appointments_core import contar_solapamiento, estaDisponible, revi
 from fastapi import HTTPException, status
 from App.db import db_client
 from App.db.models.Appointment import status_appointments
-from App.db.schemas.appointment_schemas import appointment_schema
+from App.db.schemas.appointment_schemas import appointment_to_dict
 
 
 
@@ -82,6 +82,6 @@ def create_appointment(appointment_start : datetime,
 
     id = db_client.appointments.insert_one(appointment_db).inserted_id
     new_appointment = db_client.appointments.find_one({"_id": id})
-    return appointment_schema(new_appointment)
+    return appointment_to_dict(new_appointment)
     
     

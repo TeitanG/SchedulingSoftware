@@ -1,8 +1,7 @@
 from App.db import db_client
-from bson import ObjectId
 from App.db.models.user import user_Type, user_Status
 from App.core.appointments_core import validar_objectid, validate_entity_exist
-from App.db.schemas import UserSchema
+from App.db.schemas import user_to_dict
 from App.core.users_core import validar_username_email
 from fastapi import HTTPException, status
 
@@ -20,17 +19,13 @@ def create_user(role : user_Type,
     try:
         validar_username_email(email=email, username=username, existing_user=existing_user)
     except ValueError as e:
-        raise HTTPException(status_code= status.HTTP_409_CONFLICT, detail={"error" : str(e)})
-    
-    business_objectid = None
-    if business_objectid:
-        try:
-            business_objectid = validar_objectid(business_id)
-            validate_entity_exist(db_client.businesses, business_objectid, "Business")
-        except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"mensaje": f"Business: {str(e)}"})
-
-
+        raise HTTPException(status_code= status.HTTP_409_CONFLICT, detail={"error" : str(e)})    
+        
+    try:
+        business_objectid = validar_objectid(business_id)
+        validate_entity_exist(db_client.businesses, business_objectid, "Business")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"mensaje": f"Business: {str(e)}"})
     
 
     users_db = {
@@ -40,12 +35,11 @@ def create_user(role : user_Type,
         "business_id" : business_objectid,
         "email" : email,
         "user_status" : user_status.value
-
     }
 
     insert_id = db_client.users.insert_one(users_db).inserted_id
     new_user = db_client.users.find_one({"_id" : insert_id})
-    return UserSchema(new_user)
+    return user_to_dict(new_user)
 
 
 def search_user(field: str, key):
@@ -59,7 +53,7 @@ def search_user(field: str, key):
     if not user:  
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {"Error" : "User not found"})
 
-    return UserSchema(user)          
+    return user_to_dict(user)          
         
         
 

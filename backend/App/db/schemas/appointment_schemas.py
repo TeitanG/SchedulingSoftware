@@ -1,8 +1,7 @@
-
 from pydantic import BaseModel
 from datetime import datetime, time
 
-def appointment_schema(appointment) -> dict:
+def appointment_to_dict(appointment) -> dict:
     return {
         "id": str(appointment["_id"]),
         "client_id": str(appointment["client_id"]),
@@ -17,7 +16,7 @@ def appointment_schema(appointment) -> dict:
     }
 
 
-class appointmentCreate(BaseModel):
+class AppointmentCreate(BaseModel):
     appointment_start: datetime
     availability_start: time
     availability_end: time
