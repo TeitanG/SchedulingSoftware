@@ -18,13 +18,9 @@ def create_services(
         check_name(name= name, existing_name=existing_names)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error" : str(e)})
-    
-
-
-    
-    provider_objectid = None
-    business_objectid = None
         
+    provider_objectid = None
+    business_objectid = None        
 
     try:
         provider_objectid = validar_objectid(provider_id)
@@ -39,10 +35,7 @@ def create_services(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                              detail={"mensaje" : f"Business : {str(e)}" })
-        
-
-
-    
+          
     services_db = {
         "name" : name,
         "description" : description,
@@ -54,28 +47,4 @@ def create_services(
     insert_id = db_client.services.insert_one(services_db).inserted_id
     new_service = db_client.services.find_one({"_id":insert_id})
 
-    
-
-    
-
-
-
-
     return service_to_dict(new_service)
-
-
-
-
-
-
-
-    
-
-
-
-
-    
-
-
-
-

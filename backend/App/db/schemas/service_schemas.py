@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class serviceCreate(BaseModel):
+class ServiceCreate(BaseModel):
     name : str
     description : str | None = None
     price : int | None = None

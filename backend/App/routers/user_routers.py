@@ -16,7 +16,7 @@ async def get_users():
 
 
 @router.get("/{id}")
-async def user(id: str):
+async def get_user_by_id(id: str):
     return search_user("_id", ObjectId(id))
 
 
@@ -24,5 +24,21 @@ async def user(id: str):
 async def create_single_user(user : UserCreate):
     new_user= create_user(**user.model_dump())
     return new_user
+
+
+@router.put("/{id}")
+async def update_entire_user():
+    pass
+
+@router.patch("/{id}")
+async def update_user():
+    pass
+
+
+@router.delete("/{id}")
+async def delete_user(id : str):
+    pass
+
+
 
 
