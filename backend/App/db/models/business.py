@@ -1,10 +1,11 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from enum import Enum
 
 
 
-class businessType(str, Enum):
+
+class BusinessType(str, Enum):
     medical = "medical"
     beauty =  "Belleza"
     logistics = "logistica"
@@ -14,11 +15,12 @@ class businessType(str, Enum):
 
 
 
-class business(BaseModel):
+class Business(BaseModel):
     id : Optional[str] = None
     name : str
-    business_type : str
+    business_type : BusinessType
     address : Optional[str] = None
-    contact_info : str
+    email : EmailStr
+    phone_number : str
     active : bool
     

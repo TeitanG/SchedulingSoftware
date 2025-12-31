@@ -1,8 +1,8 @@
 
 
-def check_name(name : str, existing_name : list):
+def check_name(value : str, existing_name : list, field: str = "name"):
     
-    for name_ in existing_name:
-        if name_["name"] == name:
-            raise ValueError("Este servicio ya existe")
+    for item in existing_name:
+        if item.get(field)== value:
+            raise ValueError(f"el valor '{value} ya existe")
         
