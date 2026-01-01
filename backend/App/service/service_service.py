@@ -1,7 +1,7 @@
 from App.db.client import db_client
 from App.db.schemas import service_to_dict
 from App.core.appointments_core import validar_objectid, validate_entity_exist
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Response
 from App.core.service_core import check_name
 
 
@@ -15,7 +15,7 @@ def create_services(
     existing_names = list(db_client.services.find({}))
 
     try:
-        check_name(name= name, existing_name=existing_names)
+        check_name(value= name, existing_name=existing_names)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error" : str(e)})
         
@@ -48,3 +48,34 @@ def create_services(
     new_service = db_client.services.find_one({"_id":insert_id})
 
     return service_to_dict(new_service)
+
+
+def search_service(field: str , key):
+    if field == "_id":
+        try:
+            key = validar_objectid(key)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"Error" : "Not found"})
+        
+    service = db_client.services.find_one({field: key})
+    if not service:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"Error" : "Not found"})
+    
+    return service_to_dict(service)
+
+
+def delete_services(field : str, key):
+    if field == "_id":
+        try:
+            key = validar_objectid(key)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"Error" : "Not found"})
+        
+    service = db_client.services.find_one_and_delete({field: key})
+
+    if not service:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"Error" : "Not found"})
+    
+    return Response(status_code=status.HTTP_200_OK)
+
+

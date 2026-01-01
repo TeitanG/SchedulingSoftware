@@ -3,7 +3,7 @@ from App.db.models import daysOfTheWeek
 from datetime import datetime
 from App.core import validar_objectid,validate_entity_exist
 from App.db import db_client
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Response
 from App.db.schemas import availability_to_dict
 
 def create_availability(provider_id : str,
@@ -46,5 +46,31 @@ def create_availability(provider_id : str,
     new_available = db_client.availabilities.find_one({"_id": insert_id})
     return availability_to_dict(new_available)
 
+
+def search_availability(field: str, key):
+    if field == "_id":
+        try:
+            key = validar_objectid(key)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"Error" : "Not found"})
+        
+    availability = db_client.availabilities.find_one({field: key})
+    if not availability:  
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {"Error" : "availability not found"})
+
+    return availability_to_dict(availability)  
+
+def delete_availability(field: str, key):
+    if field == "_id":
+        try:
+            key = validar_objectid(key)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error" : "Id not found"})
+        
+    availability = db_client.availabilities.find_one_and_delete({field : key})
+    if not availability:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error" : "availability not found"})
+    
+    return Response(status_code=status.HTTP_202_ACCEPTED)
     
 

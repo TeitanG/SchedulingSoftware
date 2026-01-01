@@ -3,7 +3,7 @@ from App.db.models.user import user_Type, user_Status
 from App.core.appointments_core import validar_objectid, validate_entity_exist
 from App.db.schemas import user_to_dict
 from App.core.users_core import validar_username_email
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Response
 
 
 def create_user(role : user_Type,
@@ -47,26 +47,31 @@ def search_user(field: str, key):
         try:        
             key = validar_objectid(key)
         except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"Error" : "Not found"})
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {f"Error{str(e)}" : "Not found"})
             
     user = db_client.users.find_one({field: key})
     if not user:  
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {"Error" : "User not found"})
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {f"Error" : "User not found"})
 
-    return user_to_dict(user)          
+    return user_to_dict(user)  
+
+def delete_users(field : str, key):
+    if field == "_id":
+        try:
+            key= validar_objectid(key)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {f"Error{str(e)}" : "Not found"})
         
+        user = db_client.users.find_one_and_delete({field: key})
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {f"Error" : "User not found"})
+        
+    return Response(status_code=status.HTTP_200_OK)
         
 
 
 
-    
 
-    
-
-    
-
-
-    
 
     
         

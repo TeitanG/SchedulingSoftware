@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status
-from App.service import create_user, search_user
+from App.service import create_user, search_user, delete_users
 from App.db.schemas.user_schema import UserCreate, user_to_dict
 from App.db.client import db_client
 from bson import ObjectId
@@ -37,7 +37,7 @@ async def update_user():
 
 @router.delete("/{id}")
 async def delete_user(id : str):
-    pass
+    return delete_users("_id", id)
 
 
 

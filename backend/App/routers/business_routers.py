@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from App.db.schemas import BusinessCreate, business_to_dict
 from App.db.client import db_client
-from App.service import create_business
+from App.service import create_business, search_business, delete_businesses
+from bson import ObjectId
  
 
 
@@ -18,7 +19,7 @@ async def get_businesses():
 
 @router.get("/{id}")
 async def get_one_business(id: str):
-    pass
+    return search_business("_id", id)
 
 @router.post("/")
 async def create_businesses(business : BusinessCreate ):
@@ -35,7 +36,7 @@ async def update_business():
     pass
 
 @router.delete("/{id}")
-async def delete_business():
-    pass
+async def deleted_business(id : str):
+    return delete_businesses("_id", id)
 
 

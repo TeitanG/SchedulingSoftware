@@ -1,7 +1,8 @@
 from fastapi import APIRouter
-from App.service import create_availability
+from App.service import create_availability, search_availability, delete_availability
 from App.db.schemas import CreateAvailability, availability_to_dict
 from App.db import db_client
+from bson import ObjectId
 
 
 router = APIRouter(
@@ -17,7 +18,7 @@ async def get_availabilities():
 
 @router.get("/{id}")
 async def get_one_availability(id: str):
-    pass
+    return search_availability("_id", ObjectId(id))
 
 @router.post("/")
 async def create_availabilities(availability : CreateAvailability):
@@ -34,5 +35,5 @@ async def update_availability():
     pass
 
 @router.delete("/{id}")
-async def delete_availability():
-    pass
+async def deleted_availability(id : str):
+    return delete_availability("_id", id)

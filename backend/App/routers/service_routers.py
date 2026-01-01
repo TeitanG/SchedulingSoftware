@@ -1,7 +1,9 @@
 from fastapi import APIRouter, status
-from App.service.service_service import create_services
+from App.service.service_service import create_services, search_service, delete_services
 from App.db.schemas.service_schemas import ServiceCreate, service_to_dict
 from App.db.client import db_client
+from bson import ObjectId
+
 
 
 router = APIRouter(
@@ -9,16 +11,13 @@ router = APIRouter(
     tags=["service"]
 )
 
-
-
-
 @router.get("/")
 async def get_services():
     return [service_to_dict(service) for service in db_client.services.find()]
 
 @router.get("/{id}")
 async def get_service_by_id(id: str):
-    pass
+    return search_service("_id", ObjectId(id))
 
 @router.post("/")
 async def create_service(service : ServiceCreate):
@@ -34,10 +33,9 @@ async def update_entire_service():
 async def update_service():
     pass
 
-
-@router.delete("/")
-async def delete_Service():
-    pass
+@router.delete("/{id}")
+async def delete_Service(id:str):
+    return delete_services("_id", id)
 
 
 

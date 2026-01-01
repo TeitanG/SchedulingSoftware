@@ -1,6 +1,6 @@
 from datetime import datetime, time
 from App.core.appointments_core import contar_solapamiento, estaDisponible, revisar_capacidad, validar_objectid, validate_entity_exist, calculate_end_time
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Response
 from App.db import db_client
 from App.db.models.Appointment import status_appointments
 from App.db.schemas.appointment_schemas import appointment_to_dict
@@ -67,7 +67,7 @@ def create_appointment(appointment_start : datetime,
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"mensaje": f"Servicio: {str(e)}"})
     
 
-    appointment_db = {
+    appointments_db = {
         "provider_id" : provider_objectid,
         "client_id" : client_objectid,
         "business_id" : business_objectid,
@@ -80,8 +80,37 @@ def create_appointment(appointment_start : datetime,
     }
 
 
-    id = db_client.appointments.insert_one(appointment_db).inserted_id
+    id = db_client.appointments.insert_one(appointments_db).inserted_id
     new_appointment = db_client.appointments.find_one({"_id": id})
     return appointment_to_dict(new_appointment)
     
+
+
+def serch_appointment(field: str, key):
+    if field == "_id":
+        try:
+            key =validar_objectid(key)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error": "User not found"})
+        appointment = db_client.appointments.find_one({field : key})
+        if not appointment:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error" : "User Not found"})
+        return appointment_to_dict(appointment)
     
+
+def delete_appointments(field: str, key):
+    if field =="_id":
+        try:
+            key = validar_objectid(key)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error" : "appointment not found"})
+        
+        appointment_deleted = db_client.appointments.find_one_and_delete({field : key})
+        
+        if not appointment_deleted:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"error" : "Appointment not found"})
+        
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        
+        
