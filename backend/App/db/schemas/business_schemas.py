@@ -28,3 +28,11 @@ def business_to_dict(business) -> dict:
         "active" : bool(business["active"])
     }
 
+class PatchUpdateBusiness(BaseModel):
+    name : str| None = None
+    business_type : BusinessType| None = None
+    address : str | None = None
+    email : EmailStr| None = None
+    phone_number : str| None = None
+    active : bool| None = None
+

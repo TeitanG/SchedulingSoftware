@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from App.service import create_availability, search_availability, delete_availability
-from App.db.schemas import CreateAvailability, availability_to_dict
+from App.service import create_availability, search_availability, delete_availability, patch_availability
+from App.db.schemas import CreateAvailability, availability_to_dict, PatchUpdateAvailability
 from App.db import db_client
 from bson import ObjectId
 
@@ -27,8 +27,9 @@ async def create_availabilities(availability : CreateAvailability):
     
 
 @router.put("/{id}")
-async def update_entire_availability():
-    pass
+async def update_entire_availability(id: str, availability :PatchUpdateAvailability ):
+    updated_availability = patch_availability(id, availability)
+    return updated_availability
 
 @router.patch("/{id}")
 async def update_availability():

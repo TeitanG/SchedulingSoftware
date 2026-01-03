@@ -7,6 +7,8 @@ class ServiceCreate(BaseModel):
     price : int | None = None
     provider_id : str
     business_id : str 
+    duration : int
+    capacidad : int
 
 
 
@@ -27,5 +29,17 @@ def service_to_dict(service)-> dict:
             str(service["business_id"])
             if service.get("business_id") is not None
             else None),  
+        "duration": service["duration"],
+        "capacidad": service["capacidad"]
     }
+
+class PatchUpdateService(BaseModel):
+    name : str | None = None
+    description : str | None = None
+    price : int | None = None
+    provider_id : str | None = None
+    business_id : str | None = None
+    duration : int | None = None
+    capacidad : int | None = None
+
 

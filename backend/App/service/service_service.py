@@ -10,8 +10,11 @@ def create_services(
         description : str,
         price : int,        
         provider_id : str,
-        business_id : str
+        business_id : str,
+        duration : int,
+        capacidad : int
         ):
+    
     existing_names = list(db_client.services.find({}))
 
     try:
@@ -41,7 +44,9 @@ def create_services(
         "description" : description,
         "price" : price,
         "provider" : provider_objectid,
-        "business_id" : business_objectid
+        "business_id" : business_objectid,
+        "duration" : duration,
+        "capacidad" : capacidad
     }
 
     insert_id = db_client.services.insert_one(services_db).inserted_id

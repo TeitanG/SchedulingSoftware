@@ -3,7 +3,6 @@ from pydantic import BaseModel, EmailStr
 
 
 class UserCreate(BaseModel): 
-
     role: user_Type
     username : str
     name : str
@@ -25,6 +24,14 @@ def user_to_dict(user)-> dict:
     "email": user["email"],  
     "user_status" : user["user_status"].value if hasattr(user["user_status"],"value")else user["user_status"],  
    }
+
+class PatchUserUpdate(BaseModel): 
+    role: user_Type| None = None
+    username : str| None = None
+    name : str| None = None
+    business_id: str | None = None
+    email : EmailStr| None = None
+    user_status : user_Status| None = None
     
     
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from App.service import create_appointment, serch_appointment, delete_appointments
-from App.db.schemas import AppointmentCreate, appointment_to_dict
+from App.service import create_appointment, search_appointment_by_id, delete_appointments, update_appointment_patch
+from App.db.schemas import AppointmentCreate, appointment_to_dict, PatchUpdateAppointment
 from App.db.client import db_client
 from bson import ObjectId
 
@@ -18,7 +18,7 @@ async def get_appointment():
 
 @router.get("/{id}")
 async def get_appointments_by_id(id: str):
-    return serch_appointment("_id", id)
+    return search_appointment_by_id("_id", id)
 
 
 @router.post("/")
@@ -31,12 +31,14 @@ async def delete_appointment(id : str):
      return delete_appointments("_id", id)
 
 @router.put("/{id}")
-async def update_entire_appointment():
+async def update_entire_appointment(id: str, appointment: AppointmentCreate):
     pass
+    
 
 @router.patch("/{id}")
-async def update_appointment():
-    pass
+async def update_appointment(id: str, appointment: PatchUpdateAppointment):
+    updated_appointment = update_appointment_patch(id, appointment)
+    return updated_appointment
 
 
 

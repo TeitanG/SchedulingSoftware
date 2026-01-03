@@ -1,12 +1,9 @@
 from fastapi import HTTPException, status, Response
-from App.db.models.business import BusinessType
+from App.db.models import BusinessType
 from pydantic import EmailStr
-from App.core.service_core import check_name
-from App.core.users_core import validar_email
-from App.core.business_core import normalize_phone
-from App.db.client import db_client
-from App.db.schemas.business_schemas import business_to_dict
-from App.core import validar_objectid
+from App.core import check_name,validar_email,normalize_phone, validar_objectid
+from App.db import db_client
+from App.db.schemas import business_to_dict, PatchUpdateBusiness
 
 
 
@@ -73,6 +70,60 @@ def delete_businesses(field: str, key):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error" : "Business not found/Deleted"})
 
     return Response(status_code=status.HTTP_200_OK)
+
+
+def patch_business(business_id: str, data:PatchUpdateBusiness):
+
+    try:
+        business_objectid = validar_objectid(business_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= str(e))
+    
+    current_business = db_client.businesses.find_one({"_id": business_objectid})
+
+    if not current_business:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                             detail= {"ERROR" : "Business not found"})
+
+    updated_data = {
+        k: v for k, v in data.model_dump().items() if v is not None
+    }
+
+    if "name" in updated_data and not updated_data["name"].strip():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                             detail= {"ERROR" : "Business name cannot be empty"})
+    
+
+    db_client.businesses.update_one(
+        {"_id": business_objectid},
+        {"$set":updated_data}
+    )
+
+    updated_business = db_client.businesses.find_one({"_id" : business_objectid})
+
+    return{
+        "message" : "Business updated successfully",
+        "business": updated_business
+    }
+    
+
+
+
+
+    
+    
+
+
+    
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,6 +1,26 @@
 from pydantic import BaseModel
 from datetime import datetime, time
 
+class AppointmentCreate(BaseModel):
+    appointment_start: datetime
+    availability_start: time
+    availability_end: time
+    provider_id: str
+    business_id: str
+    client_id: str
+    service_id: str    
+    notes: str | None = None
+
+class PatchUpdateAppointment(BaseModel):
+    appointment_start: datetime | None = None
+    availability_start: time | None = None
+    availability_end: time | None = None
+    provider_id: str | None = None
+    business_id: str | None = None
+    client_id: str | None = None
+    service_id: str | None = None    
+    notes: str | None = None
+
 def appointment_to_dict(appointment) -> dict:
     return {
         "id": str(appointment["_id"]),
@@ -14,17 +34,3 @@ def appointment_to_dict(appointment) -> dict:
         "status": appointment["status"],
         "notes": appointment.get("notes")
     }
-
-
-class AppointmentCreate(BaseModel):
-    appointment_start: datetime
-    availability_start: time
-    availability_end: time
-    duration: int
-    provider_id: str
-    business_id: str
-    capacidad: int
-    client_id: str
-    service_id: str    
-    notes: str | None = None
-

@@ -36,9 +36,15 @@ def validar_objectid(id_value: str) -> ObjectId:
 
 
 
-def validate_entity_exist(collection, object_id, name="entity") :
-    if not collection.find_one({"_id" : object_id}):
-        raise ValueError(f"{name} no existe"  )
+def validate_entity_exist(collection, object_id, name="entity", filters= None):
+    query = {"_id" :ObjectId}
+
+    if filters:
+        query.update(filters)
+
+    if not collection.find_one(query):
+        raise ValueError(f"{name} no existe")
+
     
     
 
@@ -59,7 +65,7 @@ def contar_solapamiento(appointments, new_start, new_end)->int:
         existing_start = existing["start_time"]
         existing_end = existing["end_time"]
 
-        if existing_start < new_end and existing_end >new_start:
+        if existing_start < new_end and existing_end > new_start:
             solapamiento +=1
 
     return solapamiento

@@ -41,6 +41,28 @@ def create_user(role : user_Type,
     new_user = db_client.users.find_one({"_id" : insert_id})
     return user_to_dict(new_user)
 
+def validar_provider(provider_id : str):
+    provider_objectid = validar_objectid(provider_id)
+
+    if not provider_objectid:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {"Error" :"Id  no encontrado"})
+    
+
+    provider = db_client.users.find_one(
+        {"_id", provider_objectid}
+    )
+
+    if not provider:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {"Error" :"Proovedor no encontrado"})
+    
+    if provider["role"] != "Proveedor":
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail= {"Error" :"Usuario no es un proveedor"})
+ 
+
+
+
+
+
 
 def search_user(field: str, key):
     if field == "_id":        
@@ -68,16 +90,4 @@ def delete_users(field : str, key):
         
     return Response(status_code=status.HTTP_200_OK)
         
-
-
-
-
-
-    
-        
-
-
-    
-
-
 
