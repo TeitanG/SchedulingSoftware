@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime, time
 
-class AppointmentCreate(BaseModel):
+class AppointmentBase(BaseModel):
     appointment_start: datetime
     availability_start: time
     availability_end: time
@@ -11,7 +11,7 @@ class AppointmentCreate(BaseModel):
     service_id: str    
     notes: str | None = None
 
-class PatchUpdateAppointment(BaseModel):
+class AppointmentPatch(BaseModel):
     appointment_start: datetime | None = None
     availability_start: time | None = None
     availability_end: time | None = None
@@ -34,3 +34,11 @@ def appointment_to_dict(appointment) -> dict:
         "status": appointment["status"],
         "notes": appointment.get("notes")
     }
+
+class AppointmentCreate(AppointmentBase):
+    pass
+
+class PutAppointment(AppointmentBase):
+    pass
+
+

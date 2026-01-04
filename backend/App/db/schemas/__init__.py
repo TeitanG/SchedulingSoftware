@@ -1,8 +1,8 @@
-from App.db.schemas.appointment_schemas import appointment_to_dict, AppointmentCreate, PatchUpdateAppointment
-from .availability_schema import CreateAvailability, availability_to_dict, PatchUpdateAvailability
-from .business_schemas import BusinessCreate, business_to_dict, PatchUpdateBusiness
-from .service_schemas import service_to_dict, PatchUpdateService, ServiceCreate
-from .user_schema import UserCreate, user_to_dict, PatchUpdateUser
+from .appointment_schemas import appointment_to_dict, AppointmentCreate, AppointmentPatch, PutAppointment
+from .availability_schema import availability_to_dict, AvailabilityCreate, AvailabilityPatch, PutAvailability
+from .business_schemas import business_to_dict, BusinessCreate, BusinessPatch, BussinessPut
+from .service_schemas import service_to_dict, ServiceCreate,ServicePatch, ServicePut
+from .user_schema import user_to_dict, UserCreate, UserPatch, UserPut
 
 
 

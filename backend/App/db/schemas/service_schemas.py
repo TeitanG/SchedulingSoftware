@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class ServiceCreate(BaseModel):
+class ServiceBase(BaseModel):
     name : str
     description : str | None = None
     price : int | None = None
@@ -33,7 +33,7 @@ def service_to_dict(service)-> dict:
         "capacidad": service["capacidad"]
     }
 
-class PatchUpdateService(BaseModel):
+class ServicePatch(BaseModel):
     name : str | None = None
     description : str | None = None
     price : int | None = None
@@ -41,5 +41,12 @@ class PatchUpdateService(BaseModel):
     business_id : str | None = None
     duration : int | None = None
     capacidad : int | None = None
+
+
+class ServiceCreate(ServiceBase):
+    pass
+
+class ServicePut(ServiceBase):
+    pass
 
 

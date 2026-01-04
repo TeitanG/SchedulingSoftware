@@ -3,8 +3,8 @@ from App.core.appointments_core import contar_solapamiento, estaDisponible, revi
 from fastapi import HTTPException, status, Response
 from App.db import db_client
 from App.db.models.Appointment import StatusAppointments
-from App.db.schemas.appointment_schemas import appointment_to_dict, AppointmentCreate, PatchUpdateAppointment
-from App.service import validar_provider
+from App.db.schemas.appointment_schemas import appointment_to_dict, AppointmentPatch,PutAppointment
+from App.service.user_service import validar_provider
 
 
 
@@ -142,7 +142,7 @@ def delete_appointments(field: str, key):
 
 def update_appointment_patch(
     appointment_id: str,
-    data: PatchUpdateAppointment
+    data: AppointmentPatch
 ):
     try:
         appointment_objectid = validar_objectid(appointment_id)
@@ -267,5 +267,62 @@ def update_appointment_patch(
 
     return {
         "message": "Appointment updated successfully",
-        "appointment_id": str(appointment_objectid)
+        "appointment_id": appointment_to_dict(appointment_objectid)
     }
+
+
+def put_appointment(id:str, data:PutAppointment):
+
+    try:
+        appointment_objectid = validar_objectid(id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    current_appointment = db_client.appointments.find_one({"_id" : appointment_objectid})
+
+    if not current_appointment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail={"Mensaje": "Cita no encontrada"})
+    
+    full_data = {
+        "appointment_start" : data.appointment_start,
+        "availability_start" : data.availability_start,
+        "availability_end" : data.availability_end,
+        "provider_id": data.provider_id,
+        "business_id": data.business_id,
+        "client_id": data.client_id,
+        "service_id": data.service_id,
+        "notes": data.notes
+    }
+
+    if full_data["availability_start"] >= full_data["availability_end"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail={"Error": "Inicio debe ser antes del final"})      
+
+    provider_id,business_id,client_id,service_id=(
+        validar_ids_entidades(
+            provider_id=full_data["provider_id"],
+            business_id=full_data["business_id"],
+            service_id=full_data["service_id"],
+            client_id=full_data["client_id"]            
+        )
+    )
+
+    full_data.update({
+        "provider_id": provider_id,
+        "business_id":business_id,
+        "service_id": service_id,
+        "client_id": client_id
+    })
+
+    db_client.appointments.update_one(
+        {"_id": appointment_objectid},
+        {"$set":full_data}
+    )
+
+    updated_appointment = db_client.appointment.find_one({"_id": appointment_objectid})
+
+    return{        
+        "Message": "Cita actualizada",
+        "updated": appointment_to_dict(updated_appointment)
+    }  

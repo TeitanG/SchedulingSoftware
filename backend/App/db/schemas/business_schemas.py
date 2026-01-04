@@ -2,7 +2,7 @@ from App.db.models.business import BusinessType
 from pydantic import BaseModel, EmailStr
 
 
-class BusinessCreate(BaseModel):
+class BusinessBase(BaseModel):
     name : str
     business_type : BusinessType
     address : str | None = None
@@ -28,11 +28,18 @@ def business_to_dict(business) -> dict:
         "active" : bool(business["active"])
     }
 
-class PatchUpdateBusiness(BaseModel):
+class BusinessPatch(BaseModel):
     name : str| None = None
     business_type : BusinessType| None = None
     address : str | None = None
     email : EmailStr| None = None
     phone_number : str| None = None
     active : bool| None = None
+
+
+class BusinessCreate(BusinessBase):
+    pass
+
+class BussinessPut(BusinessBase):
+    pass
 

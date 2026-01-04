@@ -1,7 +1,7 @@
 from App.db import db_client
 from App.db.models import user_Type, user_Status
 from App.core import validar_objectid, validate_entity_exist
-from App.db.schemas import user_to_dict, PatchUpdateUser
+from App.db.schemas import user_to_dict, UserPatch
 from App.core import validar_username_email
 from fastapi import HTTPException, status, Response
 
@@ -86,7 +86,7 @@ def delete_users(field : str, key):
     return Response(status_code=status.HTTP_200_OK)
         
 
-def patch_users(user_id: str, data:PatchUpdateUser):
+def patch_users(user_id: str, data:UserPatch):
 
     try:
         user_objectid = validar_objectid(user_id)

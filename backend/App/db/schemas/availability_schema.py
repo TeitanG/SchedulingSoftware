@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 
-class CreateAvailability(BaseModel):
+class AvailableBase(BaseModel):
     provider_id : str
     business_id : str
     day : daysOfTheWeek
@@ -25,11 +25,18 @@ def availability_to_dict(availability):
     }
 
 
-class PatchUpdateAvailability(BaseModel):
+class AvailabilityPatch(BaseModel):
     provider_id : str | None = None
     business_id : str | None = None
     day : daysOfTheWeek | None = None
     start_time : datetime | None = None
     end_time : datetime | None = None
     active : bool | None = None
+
+
+class AvailabilityCreate(AvailableBase):
+    pass
+
+class PutAvailability(AvailableBase):
+    pass
 

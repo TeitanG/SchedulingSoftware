@@ -4,7 +4,7 @@ from datetime import datetime
 from App.core import validar_objectid,validate_entity_exist
 from App.db import db_client
 from fastapi import HTTPException, status, Response
-from App.db.schemas import availability_to_dict, PatchUpdateAvailability
+from App.db.schemas import availability_to_dict, AvailabilityPatch
 
 
 
@@ -100,7 +100,7 @@ def delete_availability(field: str, key):
 
 
 ############# PUT AVAILABILITY #############
-def patch_availability(availability_id : str, data: PatchUpdateAvailability):
+def patch_availability(availability_id : str, data: AvailabilityPatch):
     try:
         availability_objectid = validar_objectid(availability_id)
     except ValueError as e:

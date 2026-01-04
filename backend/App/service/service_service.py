@@ -1,5 +1,5 @@
 from App.db import db_client
-from App.db.schemas import service_to_dict, PatchUpdateService
+from App.db.schemas import service_to_dict, ServicePatch
 from App.core import validar_objectid, validate_entity_exist
 from fastapi import HTTPException, status, Response
 from App.core import check_name
@@ -84,7 +84,7 @@ def delete_services(field : str, key):
     return Response(status_code=status.HTTP_200_OK)
 
 
-def patch_services(service_id:str, data:PatchUpdateService):
+def patch_services(service_id:str, data:ServicePatch):
 
     try:
         service_objectid = validar_objectid(service_id)

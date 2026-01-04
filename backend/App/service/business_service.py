@@ -3,7 +3,7 @@ from App.db.models import BusinessType
 from pydantic import EmailStr
 from App.core import check_name,validar_email,normalize_phone, validar_objectid
 from App.db import db_client
-from App.db.schemas import business_to_dict, PatchUpdateBusiness
+from App.db.schemas import business_to_dict, BusinessPatch
 
 
 
@@ -72,7 +72,7 @@ def delete_businesses(field: str, key):
     return Response(status_code=status.HTTP_200_OK)
 
 
-def patch_business(business_id: str, data:PatchUpdateBusiness):
+def patch_business(business_id: str, data:BusinessPatch):
 
     try:
         business_objectid = validar_objectid(business_id)

@@ -2,7 +2,7 @@ from App.db.models.user import user_Type, user_Status
 from pydantic import BaseModel, EmailStr
 
 
-class UserCreate(BaseModel): 
+class UserBase(BaseModel): 
     role: user_Type
     username : str
     name : str
@@ -25,7 +25,7 @@ def user_to_dict(user)-> dict:
     "user_status" : user["user_status"].value if hasattr(user["user_status"],"value")else user["user_status"],  
    }
 
-class PatchUpdateUser(BaseModel): 
+class UserPatch(BaseModel): 
     role: user_Type| None = None
     username : str| None = None
     name : str| None = None
@@ -33,7 +33,8 @@ class PatchUpdateUser(BaseModel):
     email : EmailStr| None = None
     user_status : user_Status| None = None
     
-    
+class UserCreate(UserBase):
+    pass
 
-
-
+class UserPut(UserBase):
+    pass
