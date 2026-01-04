@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from App.db.schemas import BusinessCreate, business_to_dict, BusinessPatch
+from App.db.schemas import BusinessCreate, business_to_dict, BusinessPatch, BussinessPut
 from App.db.client import db_client
-from App.service import create_business, search_business, delete_businesses, patch_business
+from App.service import create_business, search_business, delete_businesses, patch_business, put_bussiness
 from bson import ObjectId
  
 
@@ -25,8 +25,9 @@ async def create_businesses(business : BusinessCreate ):
     
 
 @router.put("/{id}")
-async def update_entire_business():
-    pass
+async def update_entire_business(id:str, data:BussinessPut):
+    updated_business = put_bussiness(id, data)
+    return updated_business
 
 @router.patch("/{id}")
 async def update_business(id : str, data: BusinessPatch):

@@ -1,5 +1,5 @@
 from App.db import db_client
-from App.db.schemas import service_to_dict, ServicePatch
+from App.db.schemas import service_to_dict, ServicePatch, ServicePut
 from App.core import validar_objectid, validate_entity_exist
 from fastapi import HTTPException, status, Response
 from App.core import check_name
@@ -114,7 +114,72 @@ def patch_services(service_id:str, data:ServicePatch):
 
     return{
         "Message" : "Service updated successfully",
-        "Service" : updated_service
+        "Service" :  service_to_dict(updated_service)
     }
 
 
+def put_service(service_id: str, data:ServicePut):
+
+    existing_names = list(db_client.services.find({}))
+
+    try:
+        service_objectid= validar_objectid(service_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail= str(e))
+    
+
+    current_service = db_client.services.find_one({"_id": service_objectid})
+
+    if not current_service:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail={"Error" : "Service Not found"})
+    
+
+    full_data = {
+        "name" : data.name,
+        "description" : data.description,
+        "price" : data.price,
+        "provider_id":data.provider_id,
+        "business_id": data.business_id,
+        "duration" : data.duration,
+        "capacidad": data.capacidad
+    }
+
+    provider_id = full_data["provider_id"]
+    business_id = full_data["business_id"]
+
+    try:
+        provider_objectid = validar_objectid(provider_id)
+        validate_entity_exist(db_client.services, provider_objectid, "Provider")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail={"mensaje" : f"Provider : {str(e)}" })
+        
+    try:
+        business_objectid = validar_objectid(business_id)
+        validate_entity_exist(db_client.services, business_objectid, "Business")
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail={"mensaje" : f"Business : {str(e)}" })
+    
+    if not check_name(full_data["name"], existing_names):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail={"Error" : "Nombre ya existe"})
+    
+    full_data.update({
+        "provider_id": provider_objectid,
+        "business_id" : business_objectid
+    })
+
+    db_client.services.update_one(
+        {"_id": service_objectid},
+        {"$set": full_data}
+    )
+
+    updated_service = db_client.services.find_one({"_id": service_objectid})
+
+    return{
+        "Message" : "Servicio actualizado",
+        "Servicio" : service_to_dict(updated_service)
+    }

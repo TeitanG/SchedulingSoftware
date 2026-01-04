@@ -4,7 +4,7 @@ from datetime import datetime
 from App.core import validar_objectid,validate_entity_exist
 from App.db import db_client
 from fastapi import HTTPException, status, Response
-from App.db.schemas import availability_to_dict, AvailabilityPatch
+from App.db.schemas import availability_to_dict, AvailabilityPatch, PutAvailability
 
 
 
@@ -188,5 +188,63 @@ def patch_availability(availability_id : str, data: AvailabilityPatch):
         "Availability" : updated_availability  
     }    
  
+
+def put_availability(availability_id:str, data:PutAvailability):
+    try: 
+        availability_objectid = validar_objectid(availability_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    current_availability = db_client.availabilities.find_one({"_id": availability_objectid})
+
+    if not current_availability:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail={"Error" : "Horario no encontrado"})
+    
+
+    full_data = {
+        "provider_id": data.provider_id,
+        "business_id": data.business_id,
+        "day": data.day.value,
+        "start_time": data.start_time,
+        "end_time": data.end_time,
+        "active": data.active
+    }
+    if full_data["start_time"] >= full_data["end_time"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail={"Error" : "La hora de inicio no puede ser"
+                            "mayor que la hora de finalizacion"})
+    
+    
+
+    provider_id, business_id = validar_provider_business_ids(
+        provider_id=full_data["provider_id"],
+        business_id=full_data["business_id"]
+    )
+
+    full_data.update({
+        "provider_id": provider_id,
+        "business_id": business_id,        
+    })
+
+    db_client.availabilities.update_one(
+        {"_id": availability_objectid},
+        {"$set":full_data}
+    )
+
+    updated_availability = db_client.availabilities.find_one({"_id": availability_objectid})
+
+    return{
+        "Message" : "Cita Actualizada",
+        "updated" : availability_to_dict(updated_availability)
+    }
+
+
+
+   
+
+    
+    
+
 
     

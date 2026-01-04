@@ -1,7 +1,7 @@
 from App.db import db_client
 from App.db.models import user_Type, user_Status
 from App.core import validar_objectid, validate_entity_exist
-from App.db.schemas import user_to_dict, UserPatch
+from App.db.schemas import user_to_dict, UserPatch, UserPut
 from App.core import validar_username_email
 from fastapi import HTTPException, status, Response
 
@@ -120,9 +120,69 @@ def patch_users(user_id: str, data:UserPatch):
 
     return{
         "Message" : "User updated successfully",
-        "User" : updated_user
+        "User" : user_to_dict(updated_user)
     }
 
     
+def put_user(user_id: str, data: UserPut):
+    existing_user = list(db_client.users.find({}))
+
+
+    try:
+        user_objectid = validar_objectid(user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail=str(e))
+    
+
+    current_user =  db_client.users.find_one({"_id": user_objectid})
+
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail={"Error" : "Usuario no encontrado"})
+    
+    full_data = {
+        "role" : data.role.value,
+        "username" : data.username,
+        "name" : data.name,
+        "business_id" : data.business_id,
+        "email" : data.email,
+        "user_status":data.user_status.value
+    }
+
+    if full_data["business_id"] is not None:
+        try:
+            bussiness_objectid = validar_objectid(full_data["business_id"])
+            full_data.update({"business_id": bussiness_objectid})
+
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail={"Error": "Business id_not found"})
+
+    
+    try:
+        validar_username_email(email=full_data["email"], username=full_data["username"],
+                                existing_user=existing_user)
+    except ValueError as e:
+        raise HTTPException(status_code= status.HTTP_404_NOT_FOUND,
+                             detail={"error" : str(e)})    
+    
+    db_client.users.update_one(
+        {"_id": user_objectid},
+        {"$set" : full_data}
+    )
+
+    updated_user = db_client.users.find_one({"_id": user_objectid})
+
+    return{
+        "Mensaje" : "Usuario actualizado",
+        "usuario" : user_to_dict(updated_user)
+    }
+
+    
+        
+    
+
+
 
 

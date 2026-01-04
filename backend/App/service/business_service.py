@@ -3,7 +3,7 @@ from App.db.models import BusinessType
 from pydantic import EmailStr
 from App.core import check_name,validar_email,normalize_phone, validar_objectid
 from App.db import db_client
-from App.db.schemas import business_to_dict, BusinessPatch
+from App.db.schemas import business_to_dict, BusinessPatch, BussinessPut
 
 
 
@@ -103,9 +103,63 @@ def patch_business(business_id: str, data:BusinessPatch):
 
     return{
         "message" : "Business updated successfully",
-        "business": updated_business
+        "business": business_to_dict(updated_business)
     }
 
+def put_bussiness(business_id: str, data:BussinessPut):
+
+    try:
+        business_objectid = validar_objectid(business_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    current_business = db_client.businesses.find_one({"_id" : business_objectid})
+
+    if not current_business:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail={"Error" : "Business no encontrado"})
+    
+
+    full_data={
+        "name" : data.name,
+        "business_type" : data.business_type.value,
+        "address" : data.address,
+        "email" : data.email,
+        "phone_number": data.phone_number,
+        "active" : data.active
+    }
+
+    try:
+        check_name(value=full_data["name"], existing_name=current_business)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                             detail= {"error": str(e)})
+    
+    try:
+        validar_email(email=full_data["email"], existing_emails=current_business)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                             detail={"error" : str(e)})
+    
+    phone_number_e164 = normalize_phone(phone= full_data["phone_number"], region= "CO")
+
+    full_data.update({
+        "phone_number" : phone_number_e164
+    })
+
+    db_client.businesses.update_many(
+        {"_id": business_objectid},
+        {"$set":full_data}
+    )
+
+    updated_business = db_client.businesses.find_one({"_id": business_objectid})
+
+    return{
+        "Message" :"Businesses updated",
+        "Bussiness" : business_to_dict(updated_business)
+    }
+
+    
 
     
 
