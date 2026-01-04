@@ -1,8 +1,8 @@
-from App.db.client import db_client
-from App.db.schemas import service_to_dict
-from App.core.appointments_core import validar_objectid, validate_entity_exist
+from App.db import db_client
+from App.db.schemas import service_to_dict, PatchUpdateService
+from App.core import validar_objectid, validate_entity_exist
 from fastapi import HTTPException, status, Response
-from App.core.service_core import check_name
+from App.core import check_name
 
 
 def create_services(
@@ -82,5 +82,39 @@ def delete_services(field : str, key):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"Error" : "Not found"})
     
     return Response(status_code=status.HTTP_200_OK)
+
+
+def patch_services(service_id:str, data:PatchUpdateService):
+
+    try:
+        service_objectid = validar_objectid(service_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    current_service= db_client.services.find_one({"_id": service_objectid})
+
+    if not current_service:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                             detail={"Error": "Servicio no encontrado"})
+    
+    update_data= {
+        k: v for k,v in data.model_dump().items() if v is not None
+    }
+
+    if "name" in update_data and not update_data["name"].strip():
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, 
+                            detail={"ERROR": "Name cannot be empty"})
+    
+    db_client.services.update_one(
+        {"_id": service_objectid},
+        {"$set":update_data}
+    )
+
+    updated_service = db_client.services.find_one({"_id": service_objectid})
+
+    return{
+        "Message" : "Service updated successfully",
+        "Service" : updated_service
+    }
 
 

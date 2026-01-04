@@ -1,8 +1,8 @@
 from App.db import db_client
-from App.db.models.user import user_Type, user_Status
-from App.core.appointments_core import validar_objectid, validate_entity_exist
-from App.db.schemas import user_to_dict
-from App.core.users_core import validar_username_email
+from App.db.models import user_Type, user_Status
+from App.core import validar_objectid, validate_entity_exist
+from App.db.schemas import user_to_dict, PatchUpdateUser
+from App.core import validar_username_email
 from fastapi import HTTPException, status, Response
 
 
@@ -59,11 +59,6 @@ def validar_provider(provider_id : str):
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail= {"Error" :"Usuario no es un proveedor"})
  
 
-
-
-
-
-
 def search_user(field: str, key):
     if field == "_id":        
         try:        
@@ -90,4 +85,44 @@ def delete_users(field : str, key):
         
     return Response(status_code=status.HTTP_200_OK)
         
+
+def patch_users(user_id: str, data:PatchUpdateUser):
+
+    try:
+        user_objectid = validar_objectid(user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    current_user = db_client.users.find_one("_id", user_objectid)
+
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail={"Error": "Usuario no encontrado"})
+    
+    updated_data = {
+        clave: valor for clave,valor in data.model_dump().items() if valor is not None
+    }
+
+    if "name" in updated_data and updated_data["name"].strip():
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, 
+                            detail={"ERROR": "Name cannot be empty"})
+    
+    if "username" in updated_data and updated_data["username"].strip():
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, 
+                            detail={"ERROR": "Username cannot be empty"}) 
+    
+    db_client.users.update_one(
+        {"_id": user_objectid},
+        {"$set": updated_data}
+    )
+
+    updated_user = db_client.users.find_one({"_id": user_objectid})
+
+    return{
+        "Message" : "User updated successfully",
+        "User" : updated_user
+    }
+
+    
+
 

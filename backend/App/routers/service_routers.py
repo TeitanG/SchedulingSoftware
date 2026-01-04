@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
-from App.service.service_service import create_services, search_service, delete_services
-from App.db.schemas.service_schemas import ServiceCreate, service_to_dict
-from App.db.client import db_client
+from App.service import create_services, search_service, delete_services, patch_services
+from App.db.schemas import ServiceCreate, service_to_dict, PatchUpdateService
+from App.db import db_client
 from bson import ObjectId
 
 
@@ -29,9 +29,11 @@ async def create_service(service : ServiceCreate):
 async def update_entire_service():
     pass
 
-@router.patch("/")
-async def update_service():
-    pass
+@router.patch("/{id}")
+async def update_service(id : str, data: PatchUpdateService):
+    updated_service = patch_services(id, data)
+    return updated_service
+    
 
 @router.delete("/{id}")
 async def delete_Service(id:str):

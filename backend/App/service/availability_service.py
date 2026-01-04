@@ -68,10 +68,6 @@ def validar_provider_business_ids(provider_id: str,
 
     return business_objectid, provider_objectid
 
-    
-
-
-
 
 ############# SEARCH AVAILABILITY #############
 def search_availability(field: str, key):

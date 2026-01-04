@@ -1,12 +1,9 @@
 from fastapi import APIRouter
-from App.db.schemas import BusinessCreate, business_to_dict
+from App.db.schemas import BusinessCreate, business_to_dict, PatchUpdateBusiness
 from App.db.client import db_client
-from App.service import create_business, search_business, delete_businesses
+from App.service import create_business, search_business, delete_businesses, patch_business
 from bson import ObjectId
  
-
-
-
 
 router = APIRouter(
     prefix= "/businesses",
@@ -32,8 +29,9 @@ async def update_entire_business():
     pass
 
 @router.patch("/{id}")
-async def update_business():
-    pass
+async def update_business(id : str, data: PatchUpdateBusiness):
+    update_patch_business = patch_business(id, data)
+    return update_patch_business
 
 @router.delete("/{id}")
 async def deleted_business(id : str):

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
-from App.service import create_user, search_user, delete_users
-from App.db.schemas.user_schema import UserCreate, user_to_dict
-from App.db.client import db_client
+from App.service import create_user, search_user, delete_users, patch_users
+from App.db.schemas import UserCreate, user_to_dict, PatchUpdateUser
+from App.db import db_client
 from bson import ObjectId
 
 
@@ -31,8 +31,9 @@ async def update_entire_user():
     pass
 
 @router.patch("/{id}")
-async def update_user():
-    pass
+async def update_user(id: str, data:PatchUpdateUser):
+    patch_update_user = patch_users(id, data)
+    return patch_update_user
 
 
 @router.delete("/{id}")

@@ -90,7 +90,7 @@ def patch_business(business_id: str, data:PatchUpdateBusiness):
     }
 
     if "name" in updated_data and not updated_data["name"].strip():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                              detail= {"ERROR" : "Business name cannot be empty"})
     
 
@@ -105,6 +105,8 @@ def patch_business(business_id: str, data:PatchUpdateBusiness):
         "message" : "Business updated successfully",
         "business": updated_business
     }
+
+
     
 
 
