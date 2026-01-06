@@ -272,6 +272,7 @@ def update_appointment_patch(
 
 
 def put_appointment(id:str, data:PutAppointment):
+    
 
     try:
         appointment_objectid = validar_objectid(id)
@@ -282,37 +283,44 @@ def put_appointment(id:str, data:PutAppointment):
 
     if not current_appointment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
-                            detail={"Mensaje": "Cita no encontrada"})
+                            detail={"Mensaje": "Cita no encontrada"})           
     
     full_data = {
-        "appointment_start" : data.appointment_start,
-        "availability_start" : data.availability_start,
-        "availability_end" : data.availability_end,
+        "appointment_start" : data.appointment_start,        
         "provider_id": data.provider_id,
         "business_id": data.business_id,
         "client_id": data.client_id,
         "service_id": data.service_id,
-        "notes": data.notes
+        "notes": data.notes,
+        "status" : data.notes        
     }
-
-    if full_data["availability_start"] >= full_data["availability_end"]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
-                            detail={"Error": "Inicio debe ser antes del final"})      
 
     provider_id,business_id,client_id,service_id=(
         validar_ids_entidades(
             provider_id=full_data["provider_id"],
             business_id=full_data["business_id"],
             service_id=full_data["service_id"],
-            client_id=full_data["client_id"]            
+            client_id=full_data["client_id"]    ,        
         )
     )
 
+    service = db_client.services.find_one({"_id": service_id})
+
+    if not service:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail={"Error" : "Servicio no encontrado"})
+
+    duration = service["duration"]   
+
+    end_time = calculate_end_time(full_data["appointment_start"], duration)  
+
+    full_data["end_time"] = end_time
+    
     full_data.update({
         "provider_id": provider_id,
         "business_id":business_id,
         "service_id": service_id,
-        "client_id": client_id
+        "client_id": client_id        
     })
 
     db_client.appointments.update_one(
@@ -320,14 +328,9 @@ def put_appointment(id:str, data:PutAppointment):
         {"$set":full_data}
     )
 
-    updated_appointment = db_client.appointment.find_one({"_id": appointment_objectid})
+    updated_appointment = db_client.appointments.find_one({"_id": appointment_objectid})
 
     return{        
         "Message": "Cita actualizada",
         "updated": appointment_to_dict(updated_appointment)
     }  
-
-
-
-
-

@@ -69,3 +69,7 @@ def contar_solapamiento(appointments, new_start, new_end)->int:
             solapamiento +=1
 
     return solapamiento
+
+
+def validar_transicion_estado(acutal, nuevo):
+    pass

@@ -1,10 +1,10 @@
 from typing import Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, time
 from enum import Enum
 
 class StatusAppointments(str, Enum):
-    pending = "pending"
+    pending = "pendiente"
     confirmed = "confirmed"
     completed = "completed"
     canceled = "cancelado"

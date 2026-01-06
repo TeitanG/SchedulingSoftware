@@ -99,7 +99,7 @@ def delete_availability(field: str, key):
     return Response(status_code=status.HTTP_202_ACCEPTED)
 
 
-############# PUT AVAILABILITY #############
+############# PATCH AVAILABILITY #############
 def patch_availability(availability_id : str, data: AvailabilityPatch):
     try:
         availability_objectid = validar_objectid(availability_id)
@@ -181,7 +181,7 @@ def patch_availability(availability_id : str, data: AvailabilityPatch):
         {"$set": updated_data}
     )
 
-    updated_availability = db_client.availabilities.find_one("_id", availability_objectid)
+    updated_availability = db_client.availabilities.find_one({"_id": availability_objectid})
 
     return {
         "mensaje" : "Availability updated successfully",

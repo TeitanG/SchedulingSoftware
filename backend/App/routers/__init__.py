@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from ..service import user_routers
-from . import appointment_routers, service_routers, business_routers, availability_routers
+
+from . import appointment_routers, service_routers, business_routers, availability_routers, user_routers
 
 router = APIRouter()
 

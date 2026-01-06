@@ -1,24 +1,29 @@
 from pydantic import BaseModel
 from datetime import datetime, time
+from App.db.models import StatusAppointments
 
 class AppointmentBase(BaseModel):
-    appointment_start: datetime
-    availability_start: time
-    availability_end: time
-    provider_id: str
-    business_id: str
+    appointment_start : datetime
     client_id: str
-    service_id: str    
-    notes: str | None = None
+    provider_id: str
+    service_id:str
+    business_id: str
+    start_time:datetime
+    end_time: datetime | None = None
+    status_ : StatusAppointments
+    notes: str |None = None
+
+   
 
 class AppointmentPatch(BaseModel):
-    appointment_start: datetime | None = None
-    availability_start: time | None = None
-    availability_end: time | None = None
-    provider_id: str | None = None
-    business_id: str | None = None
+    appointment_start : datetime | None = None
     client_id: str | None = None
-    service_id: str | None = None    
+    provider_id: str | None = None
+    service_id:str | None = None
+    business_id: str | None = None
+    start_time:datetime | None = None
+    end_time: datetime | None = None
+    status_ : StatusAppointments | None = None
     notes: str | None = None
 
 def appointment_to_dict(appointment) -> dict:
