@@ -1,9 +1,15 @@
 from App.db import db_client
 from App.db.models import user_Type, user_Status
 from App.core import validar_objectid, validate_entity_exist
-from App.db.schemas import user_to_dict, UserPatch, UserPut
+from App.db.schemas import (user_to_dict, UserPatch,
+                             UserPut)
 from App.core import validar_username_email
-from fastapi import HTTPException, status, Response
+from fastapi import (HTTPException, status, 
+                     Response, Depends)
+from App.repositories import (MongoDBUserRepository, UserRepository,
+                              BusinessRepository)
+from App.dependencies import get_user_repository
+
 
 
 def create_user(role : user_Type,
@@ -11,16 +17,24 @@ def create_user(role : user_Type,
                 name : str,
                 business_id: str,
                 email: str,
-                user_status : user_Status                
+                user_status : user_Status,
+                user_repo: UserRepository = Depends(get_user_repository),
+                business_repo : BusinessRepository = Depends()
                 ):
     
-    existing_user = list(db_client.users.find({}))
+    existing_username = user_repo.find_by_username(username)
+
+    if existing_username:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, 
+                            detail={"Error" : "Username already exists"})
     
-    try:
-        validar_username_email(email=email, username=username, existing_user=existing_user)
-    except ValueError as e:
-        raise HTTPException(status_code= status.HTTP_409_CONFLICT, detail={"error" : str(e)})    
-        
+    existing_email = user_repo.find_by_email(email)
+
+    if existing_email:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, 
+                            detail={"Error" : "Email already exists"})
+                            
+ 
     try:
         business_objectid = validar_objectid(business_id)
         validate_entity_exist(db_client.businesses, business_objectid, "Business")
@@ -48,9 +62,7 @@ def validar_provider(provider_id : str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {"Error" :"Id  no encontrado"})
     
 
-    provider = db_client.users.find_one(
-        {"_id", provider_objectid}
-    )
+    provider = db_client.users.find_one({"_id": provider_objectid})
 
     if not provider:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {"Error" :"Proovedor no encontrado"})
@@ -93,7 +105,7 @@ def patch_users(user_id: str, data:UserPatch):
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
-    current_user = db_client.users.find_one("_id", user_objectid)
+    current_user = db_client.users.find_one({"_id": user_objectid})
 
     if not current_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 

@@ -4,13 +4,13 @@ from datetime import time, datetime
 from enum import Enum
 
 class daysOfTheWeek(str, Enum):
-    MONDAY = "Lunes"
-    TUESDAY = "Martes"
-    WEDNESDAY = "Miércoles"
-    THURSDAY = "Jueves"
-    FRIDAY = "Viernes"
-    SATURDAY = "Sábado"
-    SUNDAY = "Domingo"
+    monday = "monday"
+    tuesday = "tuesday"
+    wednesday = "wednesday"
+    thursday = "thursday"
+    friday = "friday"
+    saturday = "saturday"
+    sunday = "sunday"
 
 
 class availability(BaseModel):

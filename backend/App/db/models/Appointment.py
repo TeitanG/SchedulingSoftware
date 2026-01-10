@@ -4,10 +4,10 @@ from datetime import datetime, time
 from enum import Enum
 
 class StatusAppointments(str, Enum):
-    pending = "pendiente"
+    pending = "pending"
     confirmed = "confirmed"
     completed = "completed"
-    canceled = "cancelado"
+    canceled = "canceled"
 
 class Appointment(BaseModel):
     id : Optional[str] = None
@@ -17,7 +17,7 @@ class Appointment(BaseModel):
     business_id: str
     start_time : datetime
     end_time: Optional[datetime] = None
-    status_ : StatusAppointments
+    status : StatusAppointments
     notes : Optional[str]
 
 

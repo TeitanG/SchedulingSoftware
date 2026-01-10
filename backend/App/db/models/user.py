@@ -3,13 +3,13 @@ from pydantic import BaseModel
 from enum import Enum
 
 class user_Type(str, Enum):
-    Administrador = "Administrador"
-    Cliente = "Cliente"
-    Proveedor = "Proveedor"
+    Admin = "Admin"
+    client = "client"
+    provider = "provider"
 
 class user_Status(str, Enum):
-    activo = "activo"
-    inactivo = "inactivo"
+    active = "active"
+    inactive = "inactive"
 
 
 class users(BaseModel):

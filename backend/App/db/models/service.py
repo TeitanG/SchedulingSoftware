@@ -9,6 +9,6 @@ class service(BaseModel):
     provider_id : str
     business_id : str
     duration : int
-    capacidad : int
+    capacity : int
 
     

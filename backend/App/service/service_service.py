@@ -12,7 +12,7 @@ def create_services(
         provider_id : str,
         business_id : str,
         duration : int,
-        capacidad : int
+        capacity : int
         ):
     
     existing_names = list(db_client.services.find({}))
@@ -46,7 +46,7 @@ def create_services(
         "provider" : provider_objectid,
         "business_id" : business_objectid,
         "duration" : duration,
-        "capacidad" : capacidad
+        "capacity" : capacity
     }
 
     insert_id = db_client.services.insert_one(services_db).inserted_id
@@ -143,7 +143,7 @@ def put_service(service_id: str, data:ServicePut):
         "provider_id":data.provider_id,
         "business_id": data.business_id,
         "duration" : data.duration,
-        "capacidad": data.capacidad
+        "capacity": data.capacity
     }
 
     provider_id = full_data["provider_id"]

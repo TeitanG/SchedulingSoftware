@@ -1,4 +1,4 @@
-
+from App.core import validar_transicion_estado
 
 def validar_username_email(email: str,
                            username:str,
@@ -47,5 +47,26 @@ def validar_email(email : str,
         if stored_email == email:
             raise ValueError("El correo electronico ya esta registrado")
         
+
+def user_types():
+    return {
+        "admin",
+        "provider",
+        "user"
+    }
+
+
+def validar_crear_cita(actor_rol:str)->bool:    
+
+    if not user_types:
+        raise PermissionError("No se puede crear la cita")
+    
+    return True
+
+
+
+
+
+
 
     

@@ -7,9 +7,9 @@ from enum import Enum
 
 class BusinessType(str, Enum):
     medical = "medical"
-    beauty =  "Belleza"
-    logistics = "logistica"
-    custom = "etc"
+    beauty =  "beauty"
+    logistics = "logistics"
+    custom = "custom"
 
 
 

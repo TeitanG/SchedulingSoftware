@@ -10,7 +10,7 @@ class AppointmentBase(BaseModel):
     business_id: str
     start_time:datetime
     end_time: datetime | None = None
-    status_ : StatusAppointments
+    status : StatusAppointments
     notes: str |None = None
 
    
@@ -23,7 +23,7 @@ class AppointmentPatch(BaseModel):
     business_id: str | None = None
     start_time:datetime | None = None
     end_time: datetime | None = None
-    status_ : StatusAppointments | None = None
+    status : StatusAppointments | None = None
     notes: str | None = None
 
 def appointment_to_dict(appointment) -> dict:
