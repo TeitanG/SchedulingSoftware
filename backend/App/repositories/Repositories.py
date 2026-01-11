@@ -11,7 +11,7 @@ class Repository(ABC):
         pass    
 
     @abstractmethod
-    def find_one(self, query: Dict)-> List[Dict[str,Any]]:
+    def find_one(self, query: Dict)-> Optional[Dict[str,Any]]:
         pass
 
     @abstractmethod
@@ -29,6 +29,7 @@ class Repository(ABC):
     @abstractmethod
     def delete(self, entity_id:str)->bool:
         pass
+    
 
 class UserRepository(Repository):
 
@@ -44,6 +45,9 @@ class UserRepository(Repository):
     def find_by_role(self, role: user_Type)-> List[Dict[str, Any]]:
         pass
 
+    @abstractmethod
+    def find_by_status(self, status: user_Status) ->List[Dict[str, Any]]:
+        pass
 
 class BusinessRepository(Repository):
 
@@ -63,7 +67,7 @@ class BusinessRepository(Repository):
 class ServiceRepository(Repository):
 
     @abstractmethod
-    def find_by_provider(self, provider_id: str)-> List[Dict[str, Any]]:
+    def find_by_provider(self, provider_id: str, date_range : Optional[tuple[datetime,datetime]] = None)-> List[Dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -97,12 +101,9 @@ class AppointmentRepository(Repository):
 class AvailabilityRepository(Repository):
 
     @abstractmethod
-    def find_by_provider(self, provider_id: str)-> List[Dict[str, Any]]:
+    def find_by_provider(self, provider_id: str, date_range :Optional[tuple[datetime,datetime]])-> List[Dict[str, Any]]:
         pass
-
-    @abstractmethod
-    def find_by_provider_and_day(self, provider_id: str, date_range: Optional[tuple]= None)-> Optional[Dict[str, Any]]:
-        pass
+    
 
     @abstractmethod
     def find_active_by_business(self, business_id: str)-> List[Dict[str,Any]]:
