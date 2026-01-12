@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class ServiceBase(BaseModel):
@@ -9,6 +10,8 @@ class ServiceBase(BaseModel):
     business_id : str 
     duration : int
     capacity : int
+    created_at : datetime
+    updated_at :  datetime
 
 
 
@@ -41,6 +44,8 @@ class ServicePatch(BaseModel):
     business_id : str | None = None
     duration : int | None = None
     capacity : int | None = None
+    created_at : datetime | None = None
+    updated_at :  datetime | None = None
 
 
 class ServiceCreate(ServiceBase):

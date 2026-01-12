@@ -5,6 +5,7 @@ from App.repositories import (UserRepository, BusinessRepository,
 from datetime import datetime
 
 from App.db.models import user_Status, user_Type, BusinessType
+from backend.App.db.models.availability import daysOfTheWeek
 
 
 
@@ -313,6 +314,36 @@ class MongoDBAvailabilityRepository(AvailabilityRepository):
             return list(self.collection.find({"business_id": busines_oid}))        
         except Exception:
             return []
+        
+    def find_overlapping_availability(self,
+                                     availability_id: str,
+                                     provider_id: str, 
+                                     business_id: str, 
+                                     day: daysOfTheWeek, 
+                                     start_time: datetime, 
+                                     end_time: datetime
+                                     ) -> Optional[Dict[str, Any]]:
+        try:
+            availability_oid = ObjectId(availability_id)
+            provider_oid = ObjectId(provider_id)
+            business_oid = ObjectId(business_id)
+            
+            query = {
+            "_id" :{"$ne" : availability_oid},
+            "provider_id" : provider_oid,
+            "business_id" : business_oid,
+            "day" : day,
+            "$or":[
+                {
+                    "start_time" : {"$lt": end_time},
+                    "end_time" : {"$gt" : start_time}
+                }
+            ]
+            }
+            return self.collection.find_one(query)
+        except Exception:
+            return None
+        
         
     
     

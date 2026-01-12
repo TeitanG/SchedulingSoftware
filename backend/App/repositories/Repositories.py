@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from App.db.models import StatusAppointments, user_Status, user_Type, BusinessType
+from App.db.models import StatusAppointments, user_Status, user_Type, BusinessType, daysOfTheWeek
 
 
 class Repository(ABC):
@@ -107,6 +107,18 @@ class AvailabilityRepository(Repository):
 
     @abstractmethod
     def find_active_by_business(self, business_id: str)-> List[Dict[str,Any]]:
+        pass
+
+    @abstractmethod
+    def find_overlapping_availability(
+        self,
+        availability_id : str,
+        provider_id : str,
+        business_id : str,
+        day : daysOfTheWeek,
+        start_time : datetime,
+        end_time : datetime,        
+    ) -> Optional[Dict[str,Any]]:
         pass
 
     

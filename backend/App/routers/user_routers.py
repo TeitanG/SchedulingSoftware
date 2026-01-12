@@ -1,14 +1,11 @@
 from fastapi import (APIRouter, status,
                     Depends)
-from typing import Dict, Any, List
-from bson import ObjectId
 
 from App.service import (create_user, get_all_users,
                         delete_users, patch_users,
                         put_user, get_user_by_id)
-from App.db.schemas import (UserCreate, user_to_dict, 
-                            UserPatch, UserPut)
-from App.db import db_client
+from App.db.schemas import (UserCreate, UserPatch,
+                            UserPut)
 from App.dependencies import (get_user_repository)
 from App.repositories import UserRepository
 
@@ -31,9 +28,11 @@ async def get_user(id: str,
     return get_user_by_id(id, user_repo)
 
 @router.post("/", status_code= status.HTTP_201_CREATED)
-async def create_single_user(user : UserCreate):
+async def create_single_user(user : UserCreate,
+                             user_repo: UserRepository = Depends(get_user_repository)):
 
-    new_user= create_user(**user.model_dump())
+    new_user= create_user(**user.model_dump(),
+                          user_repo = user_repo)
     return new_user
 
 

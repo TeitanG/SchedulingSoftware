@@ -1,32 +1,33 @@
+from fastapi import HTTPException, status, Response
+from datetime import datetime
+from typing import List, Dict, Optional
 from App.core import calculate_end_time
 from App.db.models import daysOfTheWeek
-from datetime import datetime
 from App.core import validar_objectid,validate_entity_exist
 from App.db import db_client
-from fastapi import HTTPException, status, Response
 from App.db.schemas import availability_to_dict, AvailabilityPatch, PutAvailability
+from App.repositories import AvailabilityRepository, UserRepository, BusinessRepository
 
 
-
-############# CREATE AVAILABILITY #############
 def create_availability(provider_id : str,
                         business_id : str,
                         day : daysOfTheWeek,
                         start_time : datetime,
                         end_time : datetime,
-                        active : bool                        
+                        active : bool,
+                        availability_repo : AvailabilityRepository,
+                        user_repo : UserRepository,
+                        business_repo : BusinessRepository
                         ):    
    
     
     try: 
         provider_objectid = validar_objectid(provider_id)
-        validate_entity_exist(db_client.availabilities, provider_id, "Proveedor")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Mensaje" : f"Proveedor {str(e)}"})
     
     try: 
         business_objectid = validar_objectid(business_id)
-        validate_entity_exist(db_client.availabilities, business_id, "Business")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Mensaje" : f"Business {str(e)}"})
     
@@ -43,8 +44,17 @@ def create_availability(provider_id : str,
         "active" : active,
     }
     
-    insert_id = db_client.availabilities.insert_one(availabilities_db).inserted_id
-    new_available = db_client.availabilities.find_one({"_id": insert_id})
+    availability_id = availability_repo.save(availabilities_db)
+
+    if not availability_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail={"error" : "Availability not saved"})
+    
+    new_available = availability_repo.find_by_id(availability_id)
+    if not new_available:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail={"Error" : "Availability not found"})
+    
     return availability_to_dict(new_available)
 
 
@@ -64,51 +74,41 @@ def validar_provider_business_ids(provider_id: str,
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"mensaje": f"Proveedor: {str(e)}"})
      
-
-
     return business_objectid, provider_objectid
 
 
-############# SEARCH AVAILABILITY #############
-def search_availability(field: str, key):
-    if field == "_id":
-        try:
-            key = validar_objectid(key)
-        except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"Error" : "Not found"})
-        
-    availability = db_client.availabilities.find_one({field: key})
+def search_availabilities(availability_repo : AvailabilityRepository):
+    return availability_repo.find_all()
+
+
+def search_availability(id : str, availability_repo: AvailabilityRepository):
+    availability = availability_repo.find_by_id(id)
     if not availability:  
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= {"Error" : "availability not found"})
 
     return availability_to_dict(availability)  
 
 
-############# DELETE AVAILABILITY #############
-def delete_availability(field: str, key):
-    if field == "_id":
-        try:
-            key = validar_objectid(key)
-        except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"Error" : "Id not found"})
-        
-    availability = db_client.availabilities.find_one_and_delete({field : key})
+def delete_availability(id: str, 
+                        availability_repo : AvailabilityRepository):
+
+    availability = availability_repo.delete(id)
     if not availability:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"Error" : "availability not found"})
     
-    return Response(status_code=status.HTTP_202_ACCEPTED)
+    return Response(status_code=status.HTTP_200_OK)
 
 
-############# PATCH AVAILABILITY #############
-def patch_availability(availability_id : str, data: AvailabilityPatch):
+def patch_availability(availability_id : str, data: AvailabilityPatch,
+                       availability_repo : AvailabilityRepository,
+                       user_repo : UserRepository,
+                       business_repo : BusinessRepository):
     try:
         availability_objectid = validar_objectid(availability_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
-    current_availability = db_client.availabilities.find_one(
-        {"_id": availability_objectid}        
-    )
+    current_availability = availability_repo.find_by_id(availability_id)
 
     if not current_availability:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
@@ -132,8 +132,8 @@ def patch_availability(availability_id : str, data: AvailabilityPatch):
     })
     
 
-    provider = db_client.users.find_one({"_id" : provider_objectid})
-    business = db_client.businesses.find_one({"_id": business_objectid})
+    provider =user_repo.find_by_id(str(provider_objectid))
+    business =business_repo.find_by_id(str(business_objectid))
 
 
     if not provider:
@@ -156,32 +156,29 @@ def patch_availability(availability_id : str, data: AvailabilityPatch):
             status_code=status.HTTP_400_BAD_REQUEST, detail={"Error" : "start_time must be before end_time" }
         )
     
-    day = updated_data.get("day", current_availability["day"])
+    day = updated_data.get("day", current_availability["day"])   
+
+
+
+    overlapping = availability_repo.find_overlapping_availability(availability_id,
+                                                                str(provider_objectid),
+                                                                str(business_objectid),
+                                                                day,
+                                                                start_time,
+                                                                end_time)
     
-    existing = db_client.availabilities.find_one({
-        "_id": {"$ne": availability_objectid},
-        "provider_id": provider_objectid,
-        "business_id": business_objectid,
-        "day": day,
-        "$or": [
-            {
-                "start_time": {"$lt": end_time},
-                "end_time": {"$gt": start_time}
-            }
-        ]
-    })
-    
-    if existing:
+    if overlapping:
         raise HTTPException(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
             detail={"Error" : "Availability overlaps with an existing one"})
     
-    db_client.availabilities.update_one(
-        {"_id": availability_objectid},
-        {"$set": updated_data}
-    )
+    update = availability_repo.update(availability_id, updated_data)
 
-    updated_availability = db_client.availabilities.find_one({"_id": availability_objectid})
+    if not update:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail={"Error" : "Availability not found"})
+
+    updated_availability = availability_repo.find_by_id(availability_id)
 
     return {
         "mensaje" : "Availability updated successfully",
@@ -189,13 +186,14 @@ def patch_availability(availability_id : str, data: AvailabilityPatch):
     }    
  
 
-def put_availability(availability_id:str, data:PutAvailability):
+def put_availability(availability_id:str, data:PutAvailability,
+                     availability_repo: AvailabilityRepository):
     try: 
         availability_objectid = validar_objectid(availability_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
-    current_availability = db_client.availabilities.find_one({"_id": availability_objectid})
+    current_availability = availability_repo.find_by_id(availability_id)
 
     if not current_availability:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
@@ -227,10 +225,7 @@ def put_availability(availability_id:str, data:PutAvailability):
         "business_id": business_id,        
     })
 
-    db_client.availabilities.update_one(
-        {"_id": availability_objectid},
-        {"$set":full_data}
-    )
+    updated_data = availability_repo.update(availability_id, full_data)
 
     updated_availability = db_client.availabilities.find_one({"_id": availability_objectid})
 

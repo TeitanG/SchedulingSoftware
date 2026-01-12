@@ -1,8 +1,7 @@
 from fastapi import (HTTPException, status, 
-                     Response, Depends)
+                    Depends)
 
-from typing import (Dict, Any, 
-                    Optional)
+from typing import (Dict, Any)
 
 from App.db import db_client
 from App.db.models import user_Type, user_Status
@@ -10,8 +9,8 @@ from App.core import validar_objectid, validate_entity_exist
 from App.db.schemas import (user_to_dict, UserPatch,
                              UserPut)
 from App.core import validar_username_email
-from App.repositories import (UserRepository,
-                              BusinessRepository)
+from App.repositories import UserRepository
+from App.dependencies import get_user_repository
 
 def create_user(role : user_Type,
                 username : str,
@@ -20,8 +19,7 @@ def create_user(role : user_Type,
                 email: str,
                 user_status : user_Status,
                 user_repo: UserRepository,
-                business_repo : BusinessRepository
-                )->dict[str,Any]:
+                )->Dict[str,Any]:
     
     existing_username = user_repo.find_by_username(username)
 
@@ -37,7 +35,7 @@ def create_user(role : user_Type,
      
     try:
         business_objectid = validar_objectid(business_id)
-        validate_entity_exist(db_client.businesses, business_objectid, "Business")
+        validate_entity_exist(get_user_repository, business_objectid, "Business")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"mensaje": f"Business: {str(e)}"})
     
@@ -209,11 +207,3 @@ def validar_provider(provider_id : str):
     
     if provider["role"] != "Proveedor":
             raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail= {"Error" :"Usuario no es un proveedor"})
-
-    
-        
-    
-
-
-
-

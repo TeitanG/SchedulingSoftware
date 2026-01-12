@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 class service(BaseModel):
     id : Optional[str] = None
@@ -10,5 +11,7 @@ class service(BaseModel):
     business_id : str
     duration : int
     capacity : int
+    created_at : datetime
+    updated_at : datetime
 
     
