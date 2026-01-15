@@ -1,11 +1,9 @@
 from fastapi import HTTPException, status, Response
 from typing import Any, Dict, List
-from bson import ObjectId
 from App.db.models import BusinessType
 from pydantic import EmailStr
-from App.core import check_name,validar_email,normalize_phone, validar_objectid
-from App.db import db_client
-from App.db.schemas import business_to_dict, BusinessPatch, BussinessPut
+from App.core import check_name,validar_email,normalize_phone
+from App.db.schemas import business_to_dict, BusinessPatch, BussinessPut, businesses_to_dict
 from App.repositories import BusinessRepository
 
 
@@ -22,14 +20,14 @@ def create_business(name : str,
     list_db = business_repo.find_all()
     
     try:
-        check_name(name,list_db, "business")
+        check_name(name, list_db, "business")
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"error":"Name already exists"})
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {"error":"Name is already registered"})
     
     try:
         validar_email(email, list_db)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"error" :"Email already exists"})
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"error" :"Email is already registered"})
     
     phone_number_e164 = normalize_phone(phone= phone_number, region= "CO")
     
@@ -51,13 +49,14 @@ def create_business(name : str,
     new_business = business_repo.find_by_id(business_id)
     return business_to_dict(new_business)
 
-def search_all_businesses(business_repo: BusinessRepository) ->Dict[str, Any]:
+def search_all_businesses(business_repo: BusinessRepository) ->List[Dict[str, Any]]:
     businesses = business_repo.find_all()
 
     if not businesses:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail= {"error" : "No business found"})
-    return business_to_dict(businesses)
+                            detail= {"error" : "No business found"})    
+
+    return businesses_to_dict(businesses)
 
 
 
@@ -72,12 +71,15 @@ def search_business_by_id(id: str, business_repo : BusinessRepository):
     return business_to_dict(business)
 
 
-def delete_businesses(id: str, business_repo : BusinessRepository)-> bool:
+def delete_businesses(id: str, business_repo : BusinessRepository):
     deleted_business = business_repo.delete(id)
     if not deleted_business:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail={"error" : "Business not found"})
-    return True
+    return {        
+        "Mensaje" : "Business deleted"
+    }
+
 
 def patch_business(business_id: str, data:BusinessPatch,
                    business_repo : BusinessRepository)->Dict[str,Any]:

@@ -5,9 +5,10 @@ from App.service import (create_services, search_service_by_id,
                          put_service, search_all_services)
 from App.db.schemas import (ServiceCreate, service_to_dict,
                              ServicePatch, ServicePut)
-from App.dependencies import get_service_repository
-from App.repositories import ServiceRepository
-from App.db import db_client
+from App.dependencies import (get_service_repository, get_business_repository, 
+                              get_user_repository)
+from App.repositories import (ServiceRepository, UserRepository,
+                              BusinessRepository)
 
 
 
@@ -30,9 +31,13 @@ async def get_service_by_id(id: str,
 
 @router.post("/")
 async def create_service(service : ServiceCreate,
-                         service_repo: ServiceRepository = Depends(get_service_repository)):                                                
+                         service_repo: ServiceRepository = Depends(get_service_repository),
+                         user_repo : UserRepository = Depends(get_user_repository),
+                         business_repo: BusinessRepository = Depends(get_business_repository)):                                                
     new_service = create_services(**service.model_dump(),
-                                  service_repo=service_repo)
+                                  service_repo=service_repo,
+                                  business_repo=business_repo,
+                                  user_repo=user_repo)
     return new_service
 
 

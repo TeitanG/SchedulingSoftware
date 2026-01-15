@@ -3,9 +3,8 @@ from typing import Optional, Dict, Any, List
 from App.repositories import (UserRepository, BusinessRepository,
                               ServiceRepository, AppointmentRepository, AvailabilityRepository)
 from datetime import datetime
-
-from App.db.models import user_Status, user_Type, BusinessType
-from backend.App.db.models.availability import daysOfTheWeek
+from App.db.models import user_Status, user_Type, BusinessType, StatusAppointments
+from App.db.models.availability import daysOfTheWeek
 
 
 
@@ -145,6 +144,10 @@ class MongoDBAppointmentRepository(AppointmentRepository):
         except Exception:
             return False
         
+    def save(self, entity: Dict[str, Any]) -> str:
+        result = self.collection.insert_one(entity)
+        return result(result.inserted_one)
+        
     def find_by_status(self, status: user_Status) -> List[Dict[str, Any]]:
         return list(self.collection.find({"user_status" : status.value}))
         
@@ -174,9 +177,7 @@ class MongoDBAppointmentRepository(AppointmentRepository):
         except Exception:
             return []
         
-    def save(self, entity: Dict[str, Any]) -> str:
-        result = self.collection.insert_one(entity)
-        return result(result.inserted_one)
+    
 
     def find_overlapping(self, provider_id: str, start_time: datetime, end_time: datetime) -> List[Dict[str, Any]]:
         try:
@@ -195,7 +196,40 @@ class MongoDBAppointmentRepository(AppointmentRepository):
         
             
     def find_pending_and_confirmed(self) -> List[Dict[str, Any]]:
-        return super().find_pending_and_confirmed()
+        try:
+            query = {
+                "status" : {
+                    "$in" : [
+                        StatusAppointments.pending.value,
+                        StatusAppointments.confirmed.value
+                    ]
+                }
+            }
+            cursor = self.collection.find(query).sort("start_time", 1)
+
+            return list(cursor)
+        except Exception:
+            return[]
+        
+    def existing_appointments(self, provider_id: str, business_id: str) -> List[Dict[str, Any]]:
+        try:
+            provider_oid = ObjectId(provider_id)
+            business_oid = ObjectId(business_id)
+            query ={
+                "provider_id" : provider_oid,
+                "business_id" : business_oid,
+                "status" : {
+                    "$in" :[
+                        StatusAppointments.pending.value,
+                        StatusAppointments.confirmed.value
+                    ]
+                }
+            }
+            cursor = self.collection.find(query)
+
+            return list(cursor)
+        except Exception:
+            return []
   
 
 class MongoDBServiceRepository(ServiceRepository):

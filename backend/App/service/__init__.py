@@ -1,6 +1,7 @@
 from .appointment_service import (create_appointment, search_appointment_by_id,
                                  delete_appointments, update_appointment_patch,
-                                 validar_ids_entidades, put_appointment)
+                                 validar_ids_entidades, put_appointment,
+                                 get_all_appointments)
 from .availability_service import (create_availability, search_availability,
                                     delete_availability, patch_availability,
                                     put_availability, search_availabilities)

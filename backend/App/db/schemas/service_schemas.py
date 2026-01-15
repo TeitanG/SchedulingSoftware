@@ -10,10 +10,6 @@ class ServiceBase(BaseModel):
     business_id : str 
     duration : int
     capacity : int
-    created_at : datetime
-    updated_at :  datetime
-
-
 
 def service_to_dict(service)-> dict:
     return{
@@ -33,8 +29,17 @@ def service_to_dict(service)-> dict:
             if service.get("business_id") is not None
             else None),  
         "duration": service["duration"],
-        "capacity": service["capacity"]
+        "capacity": service["capacity"],
+        "created_at" : service.get("created_at"),
+        "updated_at" : service.get("updated_at")
     }
+
+def services_to_dict(services)-> list:
+    result = []
+
+    for service in services:
+        result.append(service_to_dict(service))
+    return result
 
 class ServicePatch(BaseModel):
     name : str | None = None
@@ -44,9 +49,6 @@ class ServicePatch(BaseModel):
     business_id : str | None = None
     duration : int | None = None
     capacity : int | None = None
-    created_at : datetime | None = None
-    updated_at :  datetime | None = None
-
 
 class ServiceCreate(ServiceBase):
     pass

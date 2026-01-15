@@ -1,16 +1,16 @@
 from fastapi import (HTTPException, status, 
                     Depends)
 
-from typing import (Dict, Any)
+from typing import (Dict, Any,
+                    List)
 
 from App.db import db_client
 from App.db.models import user_Type, user_Status
-from App.core import validar_objectid, validate_entity_exist
+from App.core import validar_objectid
 from App.db.schemas import (user_to_dict, UserPatch,
-                             UserPut)
+                             UserPut, users_to_dict)
 from App.core import validar_username_email
 from App.repositories import UserRepository
-from App.dependencies import get_user_repository
 
 def create_user(role : user_Type,
                 username : str,
@@ -35,7 +35,6 @@ def create_user(role : user_Type,
      
     try:
         business_objectid = validar_objectid(business_id)
-        validate_entity_exist(get_user_repository, business_objectid, "Business")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"mensaje": f"Business: {str(e)}"})
     
@@ -61,7 +60,6 @@ def create_user(role : user_Type,
     
     return user_to_dict(new_user)
  
-
 def get_user_by_id(
         user_id: str,
         user_repo: UserRepository
@@ -77,7 +75,7 @@ def get_user_by_id(
 
 def get_all_users(
         user_repo: UserRepository
-        )-> Dict[str, Any]:
+        )-> List[Dict[str, Any]]:
     
     users = user_repo.find_all()
 
@@ -85,12 +83,12 @@ def get_all_users(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail={"error": "NOT FOUND"})
     
-    return user_to_dict(users)    
+    return users_to_dict(users)
 
 def delete_users(
         user_id: str,
         user_repo: UserRepository
-        )-> bool:
+        ):
     
     user = user_repo.delete(user_id)
 
@@ -98,9 +96,10 @@ def delete_users(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail={"error": "User not found"})
     
-    return True
-       
-
+    return {
+        "User deleted"
+    }
+ 
 def patch_users(user_id: str, 
                 data:UserPatch,
                 user_repo: UserRepository)->Dict[str,Any]:
@@ -110,7 +109,7 @@ def patch_users(user_id: str,
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
-    current_user = db_client.users.find_one({"_id": user_objectid})
+    current_user = user_repo.find_by_id(user_id)
 
     if not current_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
@@ -120,11 +119,11 @@ def patch_users(user_id: str,
         clave: valor for clave,valor in data.model_dump().items() if valor is not None 
     }
 
-    if "name" in updated_data and updated_data["name"].strip():
+    if "name" in updated_data and not updated_data["name"].strip():
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, 
                             detail={"ERROR": "Name cannot be empty"})
     
-    if "username" in updated_data and updated_data["username"].strip():
+    if "username" in updated_data and not updated_data["username"].strip():
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, 
                             detail={"ERROR": "Username cannot be empty"}) 
     
@@ -139,9 +138,7 @@ def patch_users(user_id: str,
         "message" : "User updated successfully",
         "user": user_to_dict(updated_user)
     }    
-   
-
-    
+       
 def put_user(user_id: str,
              data: UserPut,
              user_repo: UserRepository

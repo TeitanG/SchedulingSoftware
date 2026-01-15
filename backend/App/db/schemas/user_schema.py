@@ -25,6 +25,14 @@ def user_to_dict(user)-> dict:
     "user_status" : user["user_status"].value if hasattr(user["user_status"],"value")else user["user_status"],  
    }
 
+def users_to_dict(users)-> list:
+
+    result = []
+
+    for user in users:
+        result.append(user_to_dict(user))
+    return result
+
 class UserPatch(BaseModel): 
     role: user_Type| None = None
     username : str| None = None

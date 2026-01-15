@@ -28,6 +28,14 @@ def business_to_dict(business) -> dict:
         "active" : bool(business["active"])
     }
 
+def businesses_to_dict(businesses) -> list:
+    result = []
+
+    for business in businesses:
+        result.append(business_to_dict(business))        
+    return result
+
+
 class BusinessPatch(BaseModel):
     name : str| None = None
     business_type : BusinessType| None = None

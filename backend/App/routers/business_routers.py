@@ -14,7 +14,8 @@ router = APIRouter(
 
 @router.get("/")
 async def get_businesses(business_repo: BusinessRepository = Depends(get_business_repository)):
-    return search_all_businesses(business_repo)
+    businesses = search_all_businesses(business_repo)
+    return businesses
 
 @router.get("/{id}")
 async def get_one_business(id: str,

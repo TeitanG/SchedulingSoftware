@@ -97,6 +97,10 @@ class AppointmentRepository(Repository):
     def find_pending_and_confirmed(self)-> List[Dict[str, Any]]:
         pass
 
+    @abstractmethod
+    def existing_appointments(self, provider_id : str, business_id:str ) -> List[Dict[str,Any]]:
+        pass
+
 
 class AvailabilityRepository(Repository):
 

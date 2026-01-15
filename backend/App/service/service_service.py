@@ -1,10 +1,10 @@
 from fastapi import HTTPException, status, Response
 from bson import ObjectId
-from typing import Dict, Any
+from typing import Dict, Any, List
 from datetime import datetime
-from App.db import db_client
-from App.db.schemas import service_to_dict, ServicePatch, ServicePut
-from App.core import validar_objectid, validate_entity_exist
+from App.db.schemas import (service_to_dict, ServicePatch,
+                            ServicePut, services_to_dict)
+from App.core import validar_objectid
 from App.core import check_name
 from App.repositories import ServiceRepository, BusinessRepository, UserRepository
 
@@ -24,7 +24,7 @@ def create_services(
     
     
     existing_service = service_repo.find_by_name(name)
-    if existing_service:
+    if not existing_service:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail= {"Error": f"Service with name '{name}' Already exists"})
     
@@ -60,8 +60,9 @@ def create_services(
                             detail= {"Service Created but could not be retrieved"})
 
     return service_to_dict(new_service)
+ 
     
-def search_all_services(service_repo : ServiceRepository)-> Dict[str,Any]:
+def search_all_services(service_repo : ServiceRepository)-> List[Dict[str,Any]]:
     
     services = service_repo.find_all()
 
@@ -69,7 +70,7 @@ def search_all_services(service_repo : ServiceRepository)-> Dict[str,Any]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail= {"Error" : "No services found"})
     
-    return service_to_dict(services)
+    return services_to_dict(services)
 
 
 def search_service_by_id(service_id: str, 
@@ -149,7 +150,7 @@ def put_service(service_id: str, data:ServicePut,
         "business_id": data.business_id,
         "duration" : data.duration,
         "capacity": data.capacity,
-        "created_at": data.created_at,
+        "created_at": current_service.get("created_at"),
         "updated_at": datetime.now
     }
 
