@@ -107,8 +107,6 @@ class MongoDBBusinessRepository(BusinessRepository):
         return list(self.collection.find({"active": True}))
     
 
-
-
 class MongoDBAppointmentRepository(AppointmentRepository):
     def __init__(self, collection):
         self.collection = collection
@@ -140,13 +138,13 @@ class MongoDBAppointmentRepository(AppointmentRepository):
     def delete(self, entity_id: str) -> bool:
         try:
             result = self.collection.delete_one({"_id": ObjectId(entity_id)})
-            return result > 0
+            return result.deleted_count > 0
         except Exception:
             return False
         
     def save(self, entity: Dict[str, Any]) -> str:
         result = self.collection.insert_one(entity)
-        return result(result.inserted_one)
+        return str(result.inserted_id)
         
     def find_by_status(self, status: user_Status) -> List[Dict[str, Any]]:
         return list(self.collection.find({"user_status" : status.value}))
@@ -238,8 +236,10 @@ class MongoDBServiceRepository(ServiceRepository):
     
     def find_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
         try:
-            return self.collection.find_one({"_id", ObjectId(entity_id)})
-        except Exception:
+            obj_id = ObjectId(entity_id)
+            return self.collection.find_one({"_id": obj_id})
+        
+        except Exception as e:
             return None
         
     def find_one(self, query: Dict[str, Any])-> Optional[Dict[str, Any]]:
@@ -250,29 +250,6 @@ class MongoDBServiceRepository(ServiceRepository):
             return list(self.collection.find(query))
         return list(self.collection.find())
     
-    def update(self, entity_id: str, data: Dict[str, Any]) -> bool:
-        try:
-            result = self.collection.update_one(
-                {"_id": ObjectId(entity_id)},
-                {"$set": data}
-                
-            )
-            return result.modified_count >0
-        except Exception:
-            return False
-        
-    def delete(self, entity_id:str)-> bool:
-        try:
-            result= self.collection.delete_one({"_id": ObjectId(entity_id)})
-            return result > 0
-        except Exception:
-            return False
-    
-    def save(self, entity: Dict[str, Any]) -> str:
-        result = self.collection.insert_one(entity)
-        return result(result.inserted_one)
-
-
     def find_by_provider(self, provider_id: str) -> List[Dict[str, Any]]:
         try:
             provider_oid = ObjectId(provider_id)
@@ -288,8 +265,30 @@ class MongoDBServiceRepository(ServiceRepository):
             return []
 
     def find_by_name(self, name: str) -> Optional[Dict[str, Any]]:
-        return self.collection.find({"name":name})
-
+        return self.collection.find_one({"name":name})
+    
+    def update(self, entity_id: str, data: Dict[str, Any]) -> bool:
+        try:
+            result = self.collection.update_one(
+                {"_id": ObjectId(entity_id)},
+                {"$set": data}
+                
+            )
+            return result.modified_count >0
+        except Exception:
+            return False
+        
+    def delete(self, entity_id:str)-> bool:
+        try:
+            result= self.collection.delete_one({"_id": ObjectId(entity_id)})
+            return result.deleted_count > 0
+        except Exception:
+            return False
+    
+    def save(self, entity_id: Dict[str, Any]) -> str:
+        result = self.collection.insert_one(entity_id)
+        return str(result.inserted_id)
+    
 
 class MongoDBAvailabilityRepository(AvailabilityRepository):
     def __init__(self, collection):
@@ -311,7 +310,7 @@ class MongoDBAvailabilityRepository(AvailabilityRepository):
     
     def save(self, entity: Dict[str, Any]) -> str:
         result = self.collection.insert_one(entity)
-        return result(result.inserted_one)    
+        return str(result.inserted_id)    
     
     def update(self, entity_id: str, data: Dict[str, Any]) -> bool:
         try:
@@ -319,18 +318,18 @@ class MongoDBAvailabilityRepository(AvailabilityRepository):
                 {"_id": ObjectId(entity_id)},
                 {"$set": data}
             )
-            return result.modified_count >0
+            return result.modified_count > 0
         except Exception:
             return False            
         
     def delete(self, entity_id: str) ->bool:
         try:
             result = self.collection.delete_one({"_id": ObjectId(entity_id)})
-            return result.modifies_count >  0
+            return result.deleted_count  >  0
         except Exception:
             return False
         
-    def find_by_provider(self, provider_id: str, date_range = Optional[tuple[datetime, datetime]]) -> List[Dict[str, Any]]:
+    def find_by_provider(self, provider_id: str, date_range : Optional[tuple[datetime, datetime]] = None) -> List[Dict[str, Any]]:
         try:
             provider_oid = ObjectId(provider_id)
             query: dict[str, Any] = {"provider_id": provider_oid}

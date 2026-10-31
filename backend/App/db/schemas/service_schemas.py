@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from datetime import datetime
 
 
 class ServiceBase(BaseModel):
@@ -16,14 +15,19 @@ def service_to_dict(service)-> dict:
         "id" : str(service["_id"]),
         "name" : service["name"],
         "description" :(
-             service["description"]
+             service["description"])
              if service.get("description") is not None
-             else None),
+             else None,
         "price" : (
             service["price"]
             if service.get("price") is not None
             else None),
-        "provider_id" : service["provider_id"],
+        "provider_id" : (
+            str(service["provider_id"]
+                if service.get("provider_id") is not None
+                else None
+            )
+        ),
         "business_id": (
             str(service["business_id"])
             if service.get("business_id") is not None

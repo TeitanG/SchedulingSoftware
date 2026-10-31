@@ -15,7 +15,7 @@ class Appointment(BaseModel):
     provider_id : str
     service_id : str
     business_id: str
-    start_time : datetime
+    appointment_start : datetime
     end_time: Optional[datetime] = None
     status : StatusAppointments
     notes : Optional[str]
