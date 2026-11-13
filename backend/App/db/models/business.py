@@ -1,11 +1,19 @@
 import uuid
 from datetime import datetime
 from enum import Enum
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from pydantic import EmailStr, field_validator
 from sqlalchemy import CheckConstraint, DateTime, Index, text
 from sqlmodel import Field, SQLModel
 
 from .common import utc_now
+
+NAME_MAX = 120
+ADDRESS_MAX = 255
+EMAIL_MAX = 255
+PHONE_MAX = 20
+TIMEZONE_MAX = 64
 
 
 class BusinessType(str, Enum):
@@ -18,8 +26,29 @@ class BusinessType(str, Enum):
 class Currency(str, Enum):
     COP = "COP"
     USD = "USD"
-    
-class Business(SQLModel, table=True):
+
+
+def validate_timezone(value: str) -> str:
+    try:
+        ZoneInfo(value)
+    except (ZoneInfoNotFoundError, ValueError):
+        raise ValueError(f"Zona horaria desconocida: {value}")
+    return value
+
+
+class BusinessBase(SQLModel):
+    name: str = Field(max_length=NAME_MAX)
+    business_type: BusinessType
+    address: str | None = Field(default=None, max_length=ADDRESS_MAX)
+    email: str = Field(max_length=EMAIL_MAX)
+    phone_number: str = Field(max_length=PHONE_MAX)
+    timezone: str = Field(default="America/Bogota", max_length=TIMEZONE_MAX)
+    currency: Currency = Field(default=Currency.COP)
+
+    active: bool = Field(default=True)
+
+
+class Business(BusinessBase, table=True):
     __tablename__ = "businesses"  # type: ignore
     __table_args__ = (
         Index("businesses_name_unique", text("lower(name)"), unique=True),
@@ -28,12 +57,38 @@ class Business(SQLModel, table=True):
     )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    name: str = Field(max_length=120)
-    business_type : BusinessType
-    address : str | None = Field(default=None, max_length=255)
-    email: str = Field(max_length=255)
-    phone_number : str =Field(max_length=255)
-    timezone: str = Field(default="America/Bogota", max_length=64)
-    currency : Currency = Field(default=Currency.COP)
-    active : bool = Field(default=True)
-    created_at: datetime = Field(default_factory=utc_now, sa_type=DateTime(timezone=True))
+
+    created_at: datetime = Field(
+        default_factory=utc_now, sa_type=DateTime(timezone=True)
+    )
+
+
+class BusinessCreate(BusinessBase):
+    email: EmailStr
+
+    @field_validator("timezone")
+    @classmethod
+    def check_timezone(cls, value: str) -> str:
+        return validate_timezone(value)
+
+
+class BusinessPublic(BusinessBase):
+    id: uuid.UUID
+    created_at: datetime
+
+
+class BusinessUpdate(SQLModel):
+    name: str | None = Field(default=None, max_length=NAME_MAX)
+    business_type: BusinessType | None = Field(default=None)
+    address: str | None = Field(default=None, max_length=ADDRESS_MAX)
+    email: EmailStr | None = Field(default=None, max_length=EMAIL_MAX)
+    phone_number: str | None = Field(default=None, max_length=PHONE_MAX)
+    timezone: str | None = Field(default=None, max_length=TIMEZONE_MAX)
+    active: bool | None = Field(default=None)
+
+    @field_validator("timezone")
+    @classmethod
+    def check_timezone(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return validate_timezone(value)
