@@ -19,9 +19,9 @@ def service_to_dict(service)-> dict:
              if service.get("description") is not None
              else None,
         "price" : (
-            service["price"]
+            service["price"])
             if service.get("price") is not None
-            else None),
+            else None,
         "provider_id" : (
             str(service["provider_id"]
                 if service.get("provider_id") is not None

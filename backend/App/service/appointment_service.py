@@ -9,6 +9,7 @@ from App.core import (
     revisar_capacidad,
     validar_objectid,
 )
+from App.core.availability_core import time_from_db
 from App.db.models import StatusAppointments
 from App.db.schemas import (
     AppointmentCreate,
@@ -92,8 +93,8 @@ class AppointmentService:
                 },
             )
 
-        availability_start = matching_availability["start_time"]
-        availability_end = matching_availability["end_time"]
+        availability_start = time_from_db(matching_availability["start_time"])
+        availability_end = time_from_db(matching_availability["end_time"])
 
         duration = service["duration"]
         capacidad = service["capacity"]
@@ -103,15 +104,17 @@ class AppointmentService:
         if not estaDisponible(
             appointment_end=appointment_end,
             appointment_start=data.appointment_start,
-            availability_end=availability_end.time(),
-            availability_start=availability_start.time(),
+            availability_end=availability_end,
+            availability_start=availability_start,
         ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={"mensaje": "la cita no esta dentro de la disponibilidad"},
             )
 
-        existing_appointments = self.appointment_repo.find_pending_and_confirmed()
+        existing_appointments = self.appointment_repo.find_pending_and_confirmed(
+            business_id=data.business_id, provider_id=data.provider_id
+        )
 
         solapamiento = contar_solapamiento(
             appointments=existing_appointments,
@@ -211,8 +214,8 @@ class AppointmentService:
                     "Error": f"El proveedor no tiene disponibilidad los dias {appointment_day}"
                 },
             )
-        availability_start = matching_availability["start_time"].time()
-        availability_end = matching_availability["end_time"].time()
+        availability_start = time_from_db(matching_availability["start_time"])
+        availability_end = time_from_db(matching_availability["end_time"])
 
         updated_data.update(
             {
@@ -224,7 +227,7 @@ class AppointmentService:
         )
 
         service = self.service_repo.find_by_id(service_id)
-        provider = self.availability_repo.find_by_id(provider_id)
+        provider = self.user_repo.find_by_id(provider_id)
 
         if not service:
             raise HTTPException(
@@ -275,7 +278,8 @@ class AppointmentService:
         sucess = self.appointment_repo.update(appointment_id, updated_data)
         if not sucess:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail={"Appointment not saved"}
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"Error": "Appointment not saved"},
             )
 
         updated = self.appointment_repo.find_by_id(appointment_id)
@@ -332,8 +336,8 @@ class AppointmentService:
         if not estaDisponible(
             appointment_start=data.appointment_start,
             appointment_end=appointment_end,
-            availability_start=matching_availability["start_time"].time(),
-            availability_end=matching_availability["end_time"].time(),
+            availability_start=time_from_db(matching_availability["start_time"]),
+            availability_end=time_from_db(matching_availability["end_time"]),
         ):
             raise HTTPException(
                 status_code=400, detail={"Error": "Fuera del horario disponible"}

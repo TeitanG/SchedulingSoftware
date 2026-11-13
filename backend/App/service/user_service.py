@@ -4,18 +4,18 @@ from fastapi import HTTPException, status
 from pymongo import errors as pymongo_errors
 
 from App.core import validar_objectid
-from App.db.models import user_Status, user_Type
+from App.db.models import UserRole, Status
 from App.db.schemas import UserPatch, UserPut, user_to_dict, users_to_dict
 from App.repositories import UserRepository
 
 
 def create_user(
-    role: user_Type,
+    role: UserRole,
     username: str,
     name: str,
     business_id: str,
     email: str,
-    user_status: user_Status,
+    user_status: Status,
     user_repo: UserRepository,
 ) -> dict[str, Any]:
 
@@ -59,10 +59,10 @@ def create_user(
             status_code=status.HTTP_409_CONFLICT,
             detail={"Error": "Usuario ya existe"},
         )
-    except pymongo_errors.PyMongoError as e:
+    except pymongo_errors.PyMongoError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"Error": f"Error al guardar el usuario: {e!s}"},
+            detail={"Error": "Error al guardar el usuario"},
         )
 
     new_user = user_repo.find_by_id(user_id)
@@ -166,25 +166,23 @@ def put_user(user_id: str, data: UserPut, user_repo: UserRepository):
             detail={"Error": "Usuario no encontrado"},
         )
 
-    full_data = {
+    try:
+        bussiness_objectid = validar_objectid(data.business_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"Error": f"Business ID invalidao {e}"},
+        )
+
+    full_data: dict[str, Any] = {
         "role": data.role.value,
         "username": data.username,
         "name": data.name,
-        "business_id": data.business_id,
+        "business_id": bussiness_objectid,
         "email": data.email,
         "user_status": data.user_status.value,
     }
 
-    if full_data["business_id"] is not None:
-        try:
-            bussiness_objectid = validar_objectid(full_data["business_id"])
-            full_data.update({"business_id": bussiness_objectid})
-
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": f"Business id_not found, {e}"},
-            )
     if data.username != current_user.get("username"):
         existing = user_repo.find_by_username(data.username)
         if existing:
@@ -214,13 +212,13 @@ def put_user(user_id: str, data: UserPut, user_repo: UserRepository):
 
 
 def validar_provider(provider_id: str, user_repo: UserRepository):
-    provider_objectid = validar_objectid(provider_id)
-
-    if not provider_objectid:
+    try:
+        provider_objectid = validar_objectid(provider_id)
+    except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail={"Error": "Id  no encontrado"}
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"Error": "ID de provider inválido"},
         )
-
     provider = user_repo.find_by_id(str(provider_objectid))
 
     if not provider:
@@ -229,8 +227,8 @@ def validar_provider(provider_id: str, user_repo: UserRepository):
             detail={"Error": "Proovedor no encontrado"},
         )
 
-    if provider["role"] != "Proveedor":
+    if provider["role"] != UserRole.provider:
         raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
-            detail={"Error": "Usuario no es un proveedor"},
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail={"Error": "Usuario no es un provider"},
         )

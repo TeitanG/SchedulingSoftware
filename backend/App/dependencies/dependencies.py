@@ -1,7 +1,12 @@
-from App.repositories import (MongoDBUserRepository, MongoDBBusinessRepository,
-                              MongoDBAppointmentRepository, MongoDBServiceRepository,
-                              MongoDBAvailabilityRepository)
 from App.db import db_client
+from App.repositories import (
+    MongoDBAppointmentRepository,
+    MongoDBAvailabilityRepository,
+    MongoDBBusinessRepository,
+    MongoDBServiceRepository,
+    MongoDBUserRepository,
+)
+
 
 def get_user_repository()-> MongoDBUserRepository:
     return MongoDBUserRepository(db_client.users)

@@ -1,6 +1,7 @@
+from bson.errors import InvalidId
 from fastapi import HTTPException, Response, status
 
-from App.core import validar_objectid
+from App.core import time_from_db, time_to_db, validar_objectid
 from App.db.schemas import (
     AvailabilityCreate,
     AvailabilityPatch,
@@ -41,8 +42,8 @@ def create_availability(
         "provider_id": provider_objectid,
         "business_id": business_objectid,
         "day": data.day.value,
-        "start_time": data.start_time,
-        "end_time": data.end_time,
+        "start_time": time_to_db(data.start_time),
+        "end_time": time_to_db(data.end_time),
         "active": data.active,
     }
 
@@ -70,15 +71,14 @@ def validar_provider_business_ids(
 ):
     try:
         business_objectid = validar_objectid(business_id)
-    except ValueError as e:
+    except InvalidId as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"mensaje": f"Business: {e!s}"},
         )
-
     try:
         provider_objectid = validar_objectid(provider_id)
-    except ValueError as e:
+    except InvalidId as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"mensaje": f"Proveedor: {e!s}"},
@@ -87,7 +87,7 @@ def validar_provider_business_ids(
     return business_objectid, provider_objectid
 
 
-def search_availabilities(availability_repo: AvailabilityRepository):
+def get_availabilties(availability_repo: AvailabilityRepository):
     availabilities = availability_repo.find_all()
 
     if not availabilities:
@@ -98,7 +98,7 @@ def search_availabilities(availability_repo: AvailabilityRepository):
     return availabilities_to_dict(availabilities)
 
 
-def search_availability(id: str, availability_repo: AvailabilityRepository):
+def get_availability(id: str, availability_repo: AvailabilityRepository):
     availability = availability_repo.find_by_id(id)
     if not availability:
         raise HTTPException(
@@ -168,8 +168,12 @@ def patch_availability(
             detail={"Error": "Business not found"},
         )
 
-    start_time = updated_data.get("start_time", current_availability["start_time"])
-    end_time = updated_data.get("end_time", current_availability["end_time"])
+    start_time = updated_data.get("start_time") or time_from_db(
+        current_availability["start_time"]
+    )
+    end_time = updated_data.get("end_time") or time_from_db(
+        current_availability["end_time"]
+    )
 
     if start_time >= end_time:
         raise HTTPException(
@@ -179,18 +183,21 @@ def patch_availability(
 
     day = updated_data.get("day", current_availability["day"])
 
+    updated_data["start_time"] = time_to_db(start_time)
+    updated_data["end_time"] = time_to_db(end_time)
+
     overlapping = availability_repo.find_overlapping_availability(
         availability_id,
         str(provider_objectid),
         str(business_objectid),
         day,
-        start_time,
-        end_time,
+        updated_data["start_time"],
+        updated_data["end_time"],
     )
 
     if overlapping:
         raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            status_code=status.HTTP_409_CONFLICT,
             detail={"Error": "Availability overlaps with an existing one"},
         )
 
@@ -226,6 +233,10 @@ def put_availability(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
+    business_objectid, provider_objectid = validar_provider_business_ids(
+        provider_id=data.provider_id, business_id=data.business_id
+    )
+
     current_availability = availability_repo.find_by_id(str(availability_objectid))
 
     if not current_availability:
@@ -234,15 +245,10 @@ def put_availability(
             detail={"Error": "Horario no encontrado"},
         )
 
-    full_data = {
-        "provider_id": data.provider_id,
-        "business_id": data.business_id,
-        "day": data.day.value,
-        "start_time": data.start_time,
-        "end_time": data.end_time,
-        "active": data.active,
-    }
-    if full_data["start_time"] >= full_data["end_time"]:
+    start_time = time_to_db(data.start_time)
+    end_time = time_to_db(data.end_time)
+
+    if data.start_time >= data.end_time:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
@@ -251,16 +257,38 @@ def put_availability(
             },
         )
 
-    provider_id, business_id = validar_provider_business_ids(
-        provider_id=full_data["provider_id"], business_id=full_data["business_id"]
-    )
+    full_data = {
+        "provider_id": str(provider_objectid),
+        "business_id": str(business_objectid),
+        "day": data.day.value,
+        "start_time": start_time,
+        "end_time": end_time,
+        "active": data.active,
+    }
 
     full_data.update(
         {
-            "provider_id": provider_id,
-            "business_id": business_id,
+            "provider_id": str(provider_objectid),
+            "business_id": str(business_objectid),
         }
     )
+
+    day = full_data["day"]
+
+    overlaping = availability_repo.find_overlapping_availability(
+        availability_id,
+        str(provider_objectid),
+        str(business_objectid),
+        day,
+        start_time,
+        end_time,
+    )
+
+    if overlaping:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"Error": "Availability overlaps with an existing one "},
+        )
 
     updated_data = availability_repo.update(availability_id, full_data)
 

@@ -1,14 +1,14 @@
 # noqa: N999
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, time
 from typing import Any
 
 from App.db.models import (
     BusinessType,
+    Status,
     StatusAppointments,
+    UserRole,
     daysOfTheWeek,
-    user_Status,
-    user_Type,
 )
 
 
@@ -48,11 +48,11 @@ class UserRepository(Repository):
         pass
 
     @abstractmethod
-    def find_by_role(self, role: user_Type) -> list[dict[str, Any]]:
+    def find_by_role(self, role: UserRole) -> list[dict[str, Any]]:
         pass
 
     @abstractmethod
-    def find_by_status(self, status: user_Status) -> list[dict[str, Any]]:
+    def find_by_status(self, status: Status) -> list[dict[str, Any]]:
         pass
 
 
@@ -67,6 +67,10 @@ class BusinessRepository(Repository):
 
     @abstractmethod
     def find_by_type(self, type: BusinessType) -> list[dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    def find_by_email(self, email: str) -> dict[str, Any] | None:
         pass
 
 
@@ -106,7 +110,9 @@ class AppointmentRepository(Repository):
         pass
 
     @abstractmethod
-    def find_pending_and_confirmed(self) -> list[dict[str, Any]]:
+    def find_pending_and_confirmed(
+        self, business_id: str, provider_id: str
+    ) -> list[dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -134,7 +140,7 @@ class AvailabilityRepository(Repository):
         provider_id: str,
         business_id: str,
         day: daysOfTheWeek,
-        start_time: datetime,
-        end_time: datetime,
+        start_time: datetime | time | str,
+        end_time: datetime | time | str,
     ) -> dict[str, Any] | None:
         pass

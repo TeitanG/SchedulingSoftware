@@ -59,7 +59,7 @@ def contar_solapamiento(
     solapamiento = 0
 
     for existing in appointments:
-        if excluded_id and existing["_id"] == excluded_id:
+        if excluded_id and str(existing["_id"]) == excluded_id:
             continue
 
         existing_start = existing["appointment_start"]
@@ -96,7 +96,7 @@ def confirmar_cita(actor_rol: str, estado_actual: str) -> str:
     if not validar_transicion_estado(estado_actual, nuevo_estado):
         raise ValueError("Transicion de estado no permitida")
 
-    if actor_rol not in {"cliente", "proveedor", "administrador"}:
+    if actor_rol not in {"client", "provider", "admin"}:
         raise PermissionError("Rol no autorizado para confirmar citas")
 
     return nuevo_estado
@@ -108,7 +108,7 @@ def cancelar_cita(actor_rol: str, estado_actual: str) -> str:
     if not validar_transicion_estado(estado_actual, nuevo_estado):
         raise ValueError("Transicion de estado no permitida")
 
-    if actor_rol not in {"cliente", "proveedor", "administrador"}:
+    if actor_rol not in {"client", "provider", "admin"}:
         raise PermissionError("Rol no autorizado para cancelar la cita")
 
     return nuevo_estado

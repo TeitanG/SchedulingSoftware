@@ -1,9 +1,14 @@
-from typing import Optional
-from pydantic import BaseModel
-from datetime import time, datetime
+import uuid
+from datetime import datetime, time
 from enum import Enum
 
-class daysOfTheWeek(str, Enum):
+from sqlalchemy import CheckConstraint, DateTime
+from sqlmodel import Field, SQLModel
+
+from .common import utc_now
+
+
+class DaysOfTheWeek(str, Enum):
     monday = "monday"
     tuesday = "tuesday"
     wednesday = "wednesday"
@@ -13,18 +18,23 @@ class daysOfTheWeek(str, Enum):
     sunday = "sunday"
 
 
-class availability(BaseModel):
-    id : Optional[str] = None
-    provider_id : str
-    business_id : str
-    day : daysOfTheWeek
-    start_time : time
-    end_time : time
-    duration : int
-    active: bool
-    capacity : int
+class Avaibility(SQLModel, table=True):
+    __tablename__ = "availabilities"  # type: ignore
+    __table_args__ = (
+        CheckConstraint("start_time < end_time", name="start_time_before_end_time"),
+    )
 
-
-
-
-
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    member_id: uuid.UUID = Field(foreign_key="business_members.id", ondelete="RESTRICT")
+    day: DaysOfTheWeek
+    start_time: time
+    end_time: time
+    active: bool = Field(default=True)
+    created_at: datetime = Field(
+        default_factory=utc_now, sa_type=DateTime(timezone=True)
+    )
+    updated_at: datetime = Field(
+        default_factory=utc_now,
+        sa_type=DateTime(timezone=True),
+        sa_column_kwargs={"onupdate": utc_now},
+    )

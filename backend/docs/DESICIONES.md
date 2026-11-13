@@ -1,0 +1,3 @@
+- **Moneda en `businesses`**, no en servicios: un negocio cobra en una sola moneda; evita mezclar al sumar.
+- **UUIDv4** como id: no se puede adivinar ni revela volumen. Se puede pasar a v7 sin migrar.
+- **`business_members`**: una persona puede trabajar en varios negocios y tener roles distintos en cada uno.

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from App.db.models.availability import availability
-from App.db.schemas import AvailabilityPatch, PutAvailability
+from App.db.schemas import AvailabilityCreate, AvailabilityPatch, PutAvailability
 from App.dependencies import (
     get_availability_repository,
     get_business_repository,
@@ -15,10 +14,10 @@ from App.repositories import (
 from App.service import (
     create_availability,
     delete_availability,
+    get_availability,
+    get_availabilties,
     patch_availability,
     put_availability,
-    search_availabilities,
-    search_availability,
 )
 
 router = APIRouter(prefix="/availabilities", tags=["availabilities"])
@@ -28,7 +27,7 @@ router = APIRouter(prefix="/availabilities", tags=["availabilities"])
 async def get_availabilities(
     Availability_repo: AvailabilityRepository = Depends(get_availability_repository),
 ):
-    return search_availabilities(Availability_repo)
+    return get_availabilties(Availability_repo)
 
 
 @router.get("/{id}")
@@ -36,17 +35,15 @@ async def get_one_availability(
     id: str,
     availability_repo: AvailabilityRepository = Depends(get_availability_repository),
 ):
-    return search_availability(id, availability_repo)
+    return get_availability(id, availability_repo)
 
 
 @router.post("/")
 async def create_availabilities(
-    data: availability,
+    data: AvailabilityCreate,
     availability_repo: AvailabilityRepository = Depends(get_availability_repository),
 ):
-    new_availability = create_availability(
-        **data.model_dump(), availability_repo=availability_repo
-    )
+    new_availability = create_availability(data, availability_repo)
     return new_availability
 
 

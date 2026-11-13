@@ -1,12 +1,14 @@
-from fastapi import HTTPException, status, Response
-from typing import Any, Dict, List
-from App.db.models import BusinessType
+from typing import Any
+
+from fastapi import HTTPException, status
 from pydantic import EmailStr
-from App.core import check_name, validar_email, normalize_phone
+
+from App.core import normalize_phone
+from App.db.models import BusinessType
 from App.db.schemas import (
-    business_to_dict,
     BusinessPatch,
     BussinessPut,
+    business_to_dict,
     businesses_to_dict,
 )
 from App.repositories import BusinessRepository
@@ -20,27 +22,22 @@ def create_business(
     phone_number: str,
     active: bool,
     business_repo: BusinessRepository,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
 
-    list_db = business_repo.find_all()
-
-    try:
-        check_name(name, list_db, "business")
-    except ValueError:
+    if business_repo.find_by_name(name):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail={"error": "Name is already registered"},
         )
 
     try:
-        validar_email(email, list_db)
-    except ValueError:
+        phone_number_e164 = normalize_phone(phone=phone_number, region="CO")
+
+    except Exception:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "Email is already registered"},
+            detail={"Error": "An error occurred saving your phone numbe"},
         )
-
-    phone_number_e164 = normalize_phone(phone=phone_number, region="CO")
 
     businesses_db = {
         "name": name,
@@ -63,7 +60,7 @@ def create_business(
     return business_to_dict(new_business)
 
 
-def search_all_businesses(business_repo: BusinessRepository) -> List[Dict[str, Any]]:
+def search_all_businesses(business_repo: BusinessRepository) -> list[dict[str, Any]]:
     businesses = business_repo.find_all()
 
     if not businesses:
@@ -99,7 +96,7 @@ def delete_businesses(id: str, business_repo: BusinessRepository):
 
 def patch_business(
     business_id: str, data: BusinessPatch, business_repo: BusinessRepository
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
 
     current_business = business_repo.find_by_id(business_id)
 
@@ -137,7 +134,7 @@ def patch_business(
 
 def put_business(
     business_id: str, data: BussinessPut, business_Repo: BusinessRepository
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
 
     current_business = business_Repo.find_by_id(business_id)
 
@@ -155,25 +152,34 @@ def put_business(
         "phone_number": data.phone_number,
         "active": data.active,
     }
-    list_names = business_Repo.find_all()
+
+    if data.name != current_business.get("name"):
+        existing = business_Repo.find_by_name(data.name)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={"Error": "Nombre ya existe"},
+            )
+    if data.email != current_business.get("email"):
+        existing = business_Repo.find_by_email(data.email)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={"Error": "Email ya existe"},
+            )
 
     try:
-        check_name(value=full_data["name"], existing_name=list_names)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail={"error": str(e)}
+        phone_number_e164 = normalize_phone(
+            phone=full_data["phone_number"], region="CO"
         )
 
-    try:
-        validar_email(email=full_data["email"], existing_emails=list_names)
-    except ValueError as e:
+        full_data.update({"phone_number": phone_number_e164})
+
+    except Exception:  # noqa: BLE001
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail={"error": str(e)}
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"Error": "An error occured while saving the phone number"},
         )
-
-    phone_number_e164 = normalize_phone(phone=full_data["phone_number"], region="CO")
-
-    full_data.update({"phone_number": phone_number_e164})
 
     sucess = business_Repo.update(business_id, full_data)
 

@@ -34,7 +34,7 @@ async def get_appointments_by_id(
 @router.post("/")
 async def new_appoint(
     appointment: AppointmentCreate,
-    service: AppointmentService = Depends(get_appointment_repository),
+    service: AppointmentService = Depends(get_appointment_services),
 ):
     return service.create_appointment(appointment)
 
@@ -42,7 +42,7 @@ async def new_appoint(
 @router.delete("/{id}")
 async def delete_appointment(
     id: str,
-    service: AppointmentService = Depends(get_appointment_repository),
+    service: AppointmentService = Depends(get_appointment_services),
 ):
     return service.delete_appointments(id)
 
@@ -61,7 +61,7 @@ async def update_entire_appointment(
 async def update_appointment(
     id: str,
     appointment: AppointmentPatch,
-    service: AppointmentService = Depends(get_appointment_repository),
+    service: AppointmentService = Depends(get_appointment_services),
 ):
     updated_appointment = service.update_appointment_patch(id, appointment)
     return updated_appointment

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from bson import ObjectId
@@ -63,7 +63,7 @@ def create_services(
     if not new_service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"Service Created but could not be retrieved"},
+            detail={"Error": "Service Created but could not be retrieved"},
         )
 
     return service_to_dict(new_service)
@@ -132,7 +132,8 @@ def patch_services(
 
     if not sucess:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail={"Service not updated"}
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"Error": "Service not updated"},
         )
 
     updated_service = service_repo.find_by_id(service_id)
@@ -161,16 +162,16 @@ def put_service(service_id: str, data: ServicePut, service_repo: ServiceReposito
         "duration": data.duration,
         "capacity": data.capacity,
         "created_at": current_service.get("created_at"),
-        "updated_at": datetime.now(),
+        "updated_at": datetime.now(UTC),
     }
 
-    existing_names = service_repo.find_by_name(full_data["name"])
-
-    if existing_names:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"Error": "Name already in use"},
-        )
+    if data.name != current_service.get("name"):
+        existing = service_repo.find_by_name(data.name)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={"Error": "Service already exist"},
+            )
 
     provider_id = full_data["provider_id"]
     business_id = full_data["business_id"]
@@ -200,7 +201,7 @@ def put_service(service_id: str, data: ServicePut, service_repo: ServiceReposito
     if not sucess:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"Error": "User not updated"},
+            detail={"Error": "Service not updated"},
         )
 
     updated_service = service_repo.find_by_id(service_id)
