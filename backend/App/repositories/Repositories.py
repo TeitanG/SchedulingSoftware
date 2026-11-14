@@ -1,146 +1,57 @@
 # noqa: N999
+import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime, time
-from typing import Any
 
-from App.db.models import (
-    BusinessType,
-    Status,
-    StatusAppointments,
-    UserRole,
-    daysOfTheWeek,
-)
+from App.db.models import Business
 
 
-class Repository(ABC):
+class UserRepository(ABC):
     @abstractmethod
-    def find_by_id(self, entity_id: str) -> dict[str, Any] | None:
+    def something(self):
+        pass
+
+    #!todo  # noqa: EXE005
+
+
+class BusinessRepository(ABC):
+    @abstractmethod
+    def get(self, business_id: uuid.UUID) -> Business | None:
         pass
 
     @abstractmethod
-    def find_one(self, query: dict) -> dict[str, Any] | None:
+    def list_all(
+        self, *, active: bool | None = None, limit: int = 50, offset: int = 0
+    ) -> list[Business]:
         pass
 
     @abstractmethod
-    def find_all(self, query: dict | None = None) -> list[dict[str, Any]]:
+    def add(self, business: Business) -> Business:
         pass
 
     @abstractmethod
-    def save(self, entity: dict[str, Any]) -> str:
+    def update(self, business: Business, changes: dict) -> Business:
         pass
 
+
+class ServiceRepository(ABC):
     @abstractmethod
-    def update(self, entity_id: str, data: dict[str, Any]) -> bool:
+    def something(self):
         pass
 
+    #!todo  # noqa: EXE005
+
+
+class AppointmentRepository(ABC):
     @abstractmethod
-    def delete(self, entity_id: str) -> bool:
+    def something(self):
         pass
 
+    #!todo  # noqa: EXE005
 
-class UserRepository(Repository):
+
+class AvailabilityRepository(ABC):
     @abstractmethod
-    def find_by_username(self, username: str) -> dict[str, Any] | None:
+    def find_by_provider():
         pass
 
-    @abstractmethod
-    def find_by_email(self, email: str) -> dict[str, Any] | None:
-        pass
-
-    @abstractmethod
-    def find_by_role(self, role: UserRole) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_by_status(self, status: Status) -> list[dict[str, Any]]:
-        pass
-
-
-class BusinessRepository(Repository):
-    @abstractmethod
-    def find_by_name(self, name: str) -> dict[str, Any] | None:
-        pass
-
-    @abstractmethod
-    def find_active(self) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_by_type(self, type: BusinessType) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_by_email(self, email: str) -> dict[str, Any] | None:
-        pass
-
-
-class ServiceRepository(Repository):
-    @abstractmethod
-    def find_by_provider(
-        self, provider_id: str, date_range: tuple[datetime, datetime] | None = None
-    ) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_by_name(self, name: str) -> dict[str, Any] | None:
-        pass
-
-
-class AppointmentRepository(Repository):
-    @abstractmethod
-    def find_by_provider(
-        self, provider_id: str, date_range: tuple[datetime, datetime] | None = None
-    ) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_by_client(
-        self, client_id: str, date_range: tuple | None = None
-    ) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_overlapping(
-        self, provider_id: str, start_time: datetime, end_time: datetime
-    ) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_by_status(self, status: StatusAppointments) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_pending_and_confirmed(
-        self, business_id: str, provider_id: str
-    ) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def existing_appointments(
-        self, provider_id: str, business_id: str
-    ) -> list[dict[str, Any]]:
-        pass
-
-
-class AvailabilityRepository(Repository):
-    @abstractmethod
-    def find_by_provider(
-        self, provider_id: str, date_range: tuple[datetime, datetime] | None = None
-    ) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_active_by_business(self, business_id: str) -> list[dict[str, Any]]:
-        pass
-
-    @abstractmethod
-    def find_overlapping_availability(
-        self,
-        availability_id: str,
-        provider_id: str,
-        business_id: str,
-        day: daysOfTheWeek,
-        start_time: datetime | time | str,
-        end_time: datetime | time | str,
-    ) -> dict[str, Any] | None:
-        pass
+    #!todo  # noqa: EXE005

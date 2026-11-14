@@ -1,24 +1,17 @@
-from App.db import db_client
-from App.repositories import (
-    MongoDBAppointmentRepository,
-    MongoDBAvailabilityRepository,
-    MongoDBBusinessRepository,
-    MongoDBServiceRepository,
-    MongoDBUserRepository,
-)
+from typing import Annotated
+
+from fastapi import Depends
+from sqlmodel import Session
+
+from App.db.engine import get_session
+from App.repositories.sql_repositories import SQLBusinessRepository
+from App.service import BusinessService
+
+SessionDep = Annotated[Session, Depends(get_session)]
 
 
-def get_user_repository()-> MongoDBUserRepository:
-    return MongoDBUserRepository(db_client.users)
+def get_business_service(session: SessionDep) -> BusinessService:
+    return BusinessService(SQLBusinessRepository(session))
 
-def get_business_repository()-> MongoDBBusinessRepository:
-    return MongoDBBusinessRepository(db_client.businesses)
 
-def get_appointment_repository() -> MongoDBAppointmentRepository:
-    return MongoDBAppointmentRepository(db_client.appointments)
-
-def get_service_repository() -> MongoDBServiceRepository:
-    return MongoDBServiceRepository(db_client.services)
- 
-def get_availability_repository() -> MongoDBAvailabilityRepository:
-    return MongoDBAvailabilityRepository(db_client.availabilities)
+BusinessServiceDep = Annotated[BusinessService, Depends(get_business_service)]
