@@ -1,20 +1,23 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-import phonenumbers
 from pydantic import EmailStr, field_validator
 from sqlalchemy import CheckConstraint, DateTime, Index, text
 from sqlmodel import Field, SQLModel
 
-from .common import utc_now
-
-NAME_MAX = 120
-ADDRESS_MAX = 255
-EMAIL_MAX = 255
-PHONE_MAX = 20
-TIMEZONE_MAX = 64
+from .common import (
+    ADDRESS_MAX,
+    EMAIL_MAX,
+    NAME_MAX,
+    PHONE_MAX,
+    TIMEZONE_MAX,
+    clean_name,
+    empty_to_none,
+    normalize_phone,
+    utc_now,
+    validate_timezone,
+)
 
 
 class BusinessType(str, Enum):
@@ -27,33 +30,6 @@ class BusinessType(str, Enum):
 class Currency(str, Enum):
     COP = "COP"
     USD = "USD"
-
-
-def validate_timezone(value: str) -> str:
-    try:
-        ZoneInfo(value)
-    except (ZoneInfoNotFoundError, ValueError):
-        raise ValueError(f"Zona horaria desconocida: {value}")
-    return value
-
-
-def normalize_phone(
-    value: str,
-):
-    try:
-        parsed = phonenumbers.parse(value, None)
-    except phonenumbers.NumberParseException:
-        raise ValueError("Use international format, example: +573001234567")
-    if not phonenumbers.is_valid_number(parsed):
-        raise ValueError("Phone number invalid")
-    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
-
-
-def empty_to_none(value: str | None = None) -> str | None:
-    if value is None:
-        return None
-    value = value.strip()
-    return value or None
 
 
 class BusinessBase(SQLModel):
@@ -99,12 +75,12 @@ class BusinessCreate(BusinessBase):
     @field_validator("address")
     @classmethod
     def check_address(cls, value: str | None = None) -> str | None:
-        empty_to_none(value)
+        return empty_to_none(value)
 
     @field_validator("name")
     @classmethod
-    def check_name(cls, value: str | None = None) -> str | None:
-        empty_to_none(value)
+    def check_name(cls, value: str) -> str:
+        return clean_name(value)
 
 
 class BusinessPublic(BusinessBase):
@@ -145,9 +121,9 @@ class BusinessUpdate(SQLModel):
     @field_validator("address")
     @classmethod
     def check_address(cls, value: str | None = None) -> str | None:
-        empty_to_none(value)
+        return empty_to_none(value)
 
     @field_validator("name")
     @classmethod
-    def check_name(cls, value: str | None = None) -> str | None:
-        empty_to_none(value)
+    def check_name(cls, value: str) -> str:
+        return clean_name(value)

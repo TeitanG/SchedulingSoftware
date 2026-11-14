@@ -6,4 +6,4 @@ from .business_members import BusinessMembers  # noqa: F401
 from .common import utc_now  # noqa: F401
 from .provider_service import ProviderService  # noqa: F401
 from .service import Service  # noqa: F401
-from .user import User  # noqa: F401
+from .user import User, UserCreate, UserPublic, UserUpdate  # noqa: F401

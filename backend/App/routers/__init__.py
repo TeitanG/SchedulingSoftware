@@ -6,13 +6,13 @@ from . import (
     business,
     docs_router,
     # service_routers,
-    # user_routers,
+    user,
 )
 
 router = APIRouter()
 
 # router.include_router(appointment.router)
-# router.include_router(user_routers.router)
+router.include_router(user.router)
 # router.include_router(service_routers.router)
 router.include_router(business.router)
 # router.include_router(availability_routers.router)

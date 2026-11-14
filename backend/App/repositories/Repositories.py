@@ -3,14 +3,27 @@ import uuid
 from abc import ABC, abstractmethod
 
 from App.db.models import Business
+from App.db.models.user import User
 
 
 class UserRepository(ABC):
     @abstractmethod
-    def something(self):
+    def get(self, user_id: uuid.UUID) -> User | None:
         pass
 
-    #!todo  # noqa: EXE005
+    @abstractmethod
+    def list_all(
+        self, *, active: bool | None = None, limit: int = 50, offset: int = 0
+    ) -> list[User]:
+        pass
+
+    @abstractmethod
+    def add(self, user: User) -> User:
+        pass
+
+    @abstractmethod
+    def update(self, user: User, changes: dict) -> User:
+        pass
 
 
 class BusinessRepository(ABC):

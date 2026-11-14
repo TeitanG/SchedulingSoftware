@@ -1,13 +1,20 @@
 import uuid
 from datetime import datetime
 
+from pydantic import EmailStr, field_validator
 from sqlalchemy import CheckConstraint, DateTime, Index, text
 from sqlmodel import Field, SQLModel
 
-from .common import utc_now
+from .common import EMAIL_MAX, NAME_MAX, clean_name, utc_now
 
 
-class User(SQLModel, table=True):
+class UserBase(SQLModel):
+    name: str = Field(max_length=NAME_MAX)
+    email: str = Field(max_length=EMAIL_MAX)
+    active: bool = Field(default=True)
+
+
+class User(UserBase, table=True):
     __tablename__ = "users"  # type: ignore
     __table_args__ = (
         Index("users_email_unique", text("lower(email)"), unique=True),
@@ -15,9 +22,38 @@ class User(SQLModel, table=True):
     )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    name: str = Field(max_length=120)
-    email: str = Field(max_length=255)
-    active: bool = Field(default=True)
     created_at: datetime = Field(
         default_factory=utc_now, sa_type=DateTime(timezone=True)
     )
+
+
+class UserCreate(UserBase):
+    email: EmailStr
+
+    @field_validator("name")
+    @classmethod
+    def check_name(cls, value) -> str:
+        return clean_name(value)
+
+
+class UserPublic(UserBase):
+    id: uuid.UUID
+    created_at: datetime
+
+
+class UserUpdate(SQLModel):
+    name: str | None = Field(default=None, max_length=NAME_MAX)
+    email: EmailStr | None = Field(default=None, max_length=EMAIL_MAX)
+    active: bool | None = Field(default=None)
+
+    @field_validator("name", "email", "active")
+    @classmethod
+    def reject_null(cls, value):
+        if value is None:
+            raise ValueError("This field cannot be null")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def check_name(cls, value):
+        return clean_name(value)
