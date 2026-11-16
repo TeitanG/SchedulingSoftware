@@ -26,6 +26,9 @@ class User(UserBase, table=True):
         default_factory=utc_now, sa_type=DateTime(timezone=True)
     )
 
+    def sqlmodel_update(self, changes):
+        ...
+
 
 class UserCreate(UserBase):
     email: EmailStr

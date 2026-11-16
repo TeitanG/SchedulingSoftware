@@ -1,8 +1,8 @@
-# noqa: N999
 import uuid
 from abc import ABC, abstractmethod
 
 from App.db.models import Business
+from App.db.models.business_members import BusinessMembers
 from App.db.models.user import User
 
 
@@ -68,3 +68,32 @@ class AvailabilityRepository(ABC):
         pass
 
     #!todo  # noqa: EXE005
+
+
+class BusinessMemberRepository(ABC):
+    @abstractmethod
+    def get(self, business_member_id: uuid.UUID) -> BusinessMembers:
+        pass
+
+   
+
+    @abstractmethod
+    def add(self, data: BusinessMembers) -> BusinessMembers:
+        pass
+
+    @abstractmethod
+    def update(
+        self, business_member: BusinessMembers, changes: dict
+    ) -> BusinessMembers:
+        pass
+
+    @abstractmethod
+    def list_by_business(
+        self,
+        business_id: uuid.UUID,
+        *,
+        active: bool | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[BusinessMembers]:
+        pass

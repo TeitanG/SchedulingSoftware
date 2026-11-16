@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, status
 from App.db.models.user import User, UserCreate, UserPublic, UserUpdate
 from App.dependencies.dependencies import UserServiceDep
 
-router = APIRouter(prefix="/users", tags=["usuarios"])
+router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.post("/", response_model=UserPublic, status_code=status.HTTP_201_CREATED)

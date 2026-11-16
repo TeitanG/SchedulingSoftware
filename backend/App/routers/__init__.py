@@ -4,6 +4,7 @@ from . import (
     # appointment,
     # availability_routers,
     business,
+    business_member,
     docs_router,
     # service_routers,
     user,
@@ -17,3 +18,4 @@ router.include_router(user.router)
 router.include_router(business.router)
 # router.include_router(availability_routers.router)
 router.include_router(docs_router.router)
+router.include_router(business_member.router)

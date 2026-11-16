@@ -40,7 +40,6 @@ class BusinessBase(SQLModel):
     phone_number: str = Field(max_length=PHONE_MAX)
     timezone: str = Field(default="America/Bogota", max_length=TIMEZONE_MAX)
     currency: Currency = Field(default=Currency.COP)
-
     active: bool = Field(default=True)
 
 

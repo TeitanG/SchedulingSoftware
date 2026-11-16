@@ -4,8 +4,13 @@ from fastapi import Depends
 from sqlmodel import Session
 
 from App.db.engine import get_session
-from App.repositories.sql_repositories import SQLBusinessRepository, SQLUserRepository
+from App.repositories.sql_repositories import (
+    SQLBusinessRepository,
+    SQLModelBusinessMembersRepository,
+    SQLUserRepository,
+)
 from App.service.business import BusinessService
+from App.service.business_member import BusinessMemberService
 from App.service.user import UserService
 
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -19,5 +24,16 @@ def get_user_service(session: SessionDep) -> UserService:
     return UserService(SQLUserRepository(session))
 
 
-BusinessServiceDep = Annotated[BusinessService, Depends(get_business_service)]
+def get_business_member_service(session: SessionDep) -> BusinessMemberService:
+    return BusinessMemberService(
+        SQLModelBusinessMembersRepository(session),
+        SQLUserRepository(session),
+        SQLBusinessRepository(session),
+    )
+
+
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+BusinessServiceDep = Annotated[BusinessService, Depends(get_business_service)]
+BusinessMemberServiceDep = Annotated[
+    BusinessMemberService, Depends(get_business_member_service)
+]

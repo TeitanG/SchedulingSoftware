@@ -11,7 +11,7 @@ from App.db.models.business import (
 )
 from App.dependencies.dependencies import BusinessServiceDep
 
-router = APIRouter(prefix="/business", tags=["business"])
+router = APIRouter(prefix="/business", tags=["Businesses"])
 
 
 @router.post("/", response_model=BusinessPublic, status_code=status.HTTP_201_CREATED)
