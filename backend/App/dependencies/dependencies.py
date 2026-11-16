@@ -7,10 +7,12 @@ from App.db.engine import get_session
 from App.repositories.sql_repositories import (
     SQLBusinessRepository,
     SQLModelBusinessMembersRepository,
+    SQLServiceRepository,
     SQLUserRepository,
 )
 from App.service.business import BusinessService
 from App.service.business_member import BusinessMemberService
+from App.service.service import ServiceService
 from App.service.user import UserService
 
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -32,8 +34,16 @@ def get_business_member_service(session: SessionDep) -> BusinessMemberService:
     )
 
 
+def get_service_service(session: SessionDep) -> ServiceService:
+    return ServiceService(
+        SQLServiceRepository(session),
+        SQLBusinessRepository(session),
+    )
+
+
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 BusinessServiceDep = Annotated[BusinessService, Depends(get_business_service)]
 BusinessMemberServiceDep = Annotated[
     BusinessMemberService, Depends(get_business_member_service)
 ]
+ServiceServiceDep = Annotated[ServiceService, Depends(get_service_service)]

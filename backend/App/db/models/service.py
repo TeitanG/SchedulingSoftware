@@ -1,13 +1,23 @@
 import uuid
 from datetime import datetime
 
+from pydantic import field_validator
 from sqlalchemy import CheckConstraint, DateTime, Index, text
 from sqlmodel import Field, SQLModel
 
-from .common import utc_now
+from .common import DESCRIPTION_MAX, NAME_MAX, clean_name, empty_to_none, utc_now
 
 
-class Service(SQLModel, table=True):
+class ServiceBase(SQLModel):
+    name: str = Field(max_length=NAME_MAX)
+    description: str | None = Field(default=None, max_length=DESCRIPTION_MAX)
+    price_amount: int = Field(gt=0)
+    duration: int = Field(gt=0)
+    capacity: int = Field(default=1, ge=1)
+    active: bool = Field(default=True)
+
+
+class Service(ServiceBase, table=True):
     __tablename__ = "services"  # type: ignore
     __table_args__ = (
         Index(
@@ -24,12 +34,7 @@ class Service(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     business_id: uuid.UUID = Field(foreign_key="businesses.id", ondelete="RESTRICT")
-    name: str = Field(max_length=120)
-    description: str | None = Field(default=None, max_length=255)
-    price_amount: int
-    duration: int
-    capacity: int = Field(default=1)
-    active: bool = Field(default=True)
+
     created_at: datetime = Field(
         default_factory=utc_now, sa_type=DateTime(timezone=True)
     )
@@ -40,3 +45,50 @@ class Service(SQLModel, table=True):
         ),
         sa_column_kwargs={"onupdate": utc_now},
     )
+
+
+class ServicePublic(ServiceBase):
+    id: uuid.UUID
+    business_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class ServiceCreate(ServiceBase):
+    @field_validator("name")
+    @classmethod
+    def check_name(cls, value: str) -> str:
+        return clean_name(value)
+
+    @field_validator("description")
+    @classmethod
+    def check_description(cls, value: str | None) -> str | None:
+        return empty_to_none(value)
+
+
+class ServiceUpdate(SQLModel):
+    name: str | None = Field(default=None, max_length=NAME_MAX)
+    description: str | None = Field(default=None, max_length=DESCRIPTION_MAX)
+    price_amount: int | None = Field(default=None, gt=0)
+    duration: int | None = Field(default=None, gt=0)
+    capacity: int | None = Field(default=None, ge=1)
+    active: bool | None = Field(default=None)
+
+    @field_validator("name", "price_amount", "duration", "capacity", "active")
+    @classmethod
+    def reject_null(cls, value):
+        if value is None:
+            raise ValueError("This field cannot be null")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def check_name(cls, value) -> str | None:
+        if value is None:
+            return None
+        return clean_name(value)
+
+    @field_validator("description")
+    @classmethod
+    def check_description(cls, value: str | None) -> str | None:
+        return empty_to_none(value)

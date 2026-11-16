@@ -6,7 +6,7 @@ from . import (
     business,
     business_member,
     docs_router,
-    # service_routers,
+    service,
     user,
 )
 
@@ -14,7 +14,7 @@ router = APIRouter()
 
 # router.include_router(appointment.router)
 router.include_router(user.router)
-# router.include_router(service_routers.router)
+router.include_router(service.router)
 router.include_router(business.router)
 # router.include_router(availability_routers.router)
 router.include_router(docs_router.router)

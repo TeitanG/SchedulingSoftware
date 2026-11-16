@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 from App.db.models import Business
 from App.db.models.business_members import BusinessMembers
+from App.db.models.service import Service
 from App.db.models.user import User
 
 
@@ -46,36 +47,10 @@ class BusinessRepository(ABC):
         pass
 
 
-class ServiceRepository(ABC):
-    @abstractmethod
-    def something(self):
-        pass
-
-    #!todo  # noqa: EXE005
-
-
-class AppointmentRepository(ABC):
-    @abstractmethod
-    def something(self):
-        pass
-
-    #!todo  # noqa: EXE005
-
-
-class AvailabilityRepository(ABC):
-    @abstractmethod
-    def find_by_provider():
-        pass
-
-    #!todo  # noqa: EXE005
-
-
 class BusinessMemberRepository(ABC):
     @abstractmethod
     def get(self, business_member_id: uuid.UUID) -> BusinessMembers:
         pass
-
-   
 
     @abstractmethod
     def add(self, data: BusinessMembers) -> BusinessMembers:
@@ -96,4 +71,29 @@ class BusinessMemberRepository(ABC):
         limit: int = 50,
         offset: int = 0,
     ) -> list[BusinessMembers]:
+        pass
+
+
+class ServiceRepository(ABC):
+    @abstractmethod
+    def get(self, service_id: uuid.UUID) -> Service | None:
+        pass
+
+    @abstractmethod
+    def add(self, service: Service) -> Service:
+        pass
+
+    @abstractmethod
+    def update(self, service: Service, changes: dict) -> Service:
+        pass
+
+    @abstractmethod
+    def list_by_business(
+        self,
+        business_id: uuid.UUID,
+        *,
+        active: bool | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Service]:
         pass

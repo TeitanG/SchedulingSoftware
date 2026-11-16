@@ -8,6 +8,7 @@ ADDRESS_MAX = 255
 EMAIL_MAX = 255
 PHONE_MAX = 20
 TIMEZONE_MAX = 64
+DESCRIPTION_MAX = 255
 
 
 def utc_now() -> datetime:

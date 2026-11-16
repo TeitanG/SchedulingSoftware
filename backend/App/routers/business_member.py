@@ -1,6 +1,7 @@
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from App.db.models.business_members import (
     BusinessMembers,
@@ -29,8 +30,8 @@ def list_business_members(
     service: BusinessMemberServiceDep,
     business_id: uuid.UUID,
     active: bool | None = None,
-    limit: int = 50,
-    offset: int = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[BusinessMembers]:
     return service.list_by_business(
         business_id, active=active, limit=limit, offset=offset

@@ -1,7 +1,7 @@
 import uuid
-from typing import Annotated, NoReturn
+from typing import NoReturn
 
-from fastapi import HTTPException, Query, status
+from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 from App.db.models.business_members import (
@@ -104,8 +104,8 @@ class BusinessMemberService:
         business_id: uuid.UUID,
         *,
         active: bool | None = None,
-        limit: Annotated[int, Query(ge=1, le=100)] = 50,
-        offset: Annotated[int, Query(ge=0)] = 0,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[BusinessMembers]:
         if self.business_repo.get(business_id) is None:
             raise HTTPException(
