@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 from App.db.models import Business
 from App.db.models.business_members import BusinessMembers
+from App.db.models.provider_service import ProviderService
 from App.db.models.service import Service
 from App.db.models.user import User
 
@@ -49,11 +50,11 @@ class BusinessRepository(ABC):
 
 class BusinessMemberRepository(ABC):
     @abstractmethod
-    def get(self, business_member_id: uuid.UUID) -> BusinessMembers:
+    def get(self, business_member_id: uuid.UUID) -> BusinessMembers | None:
         pass
 
     @abstractmethod
-    def add(self, data: BusinessMembers) -> BusinessMembers:
+    def add(self, business_member: BusinessMembers) -> BusinessMembers:
         pass
 
     @abstractmethod
@@ -96,4 +97,29 @@ class ServiceRepository(ABC):
         limit: int = 50,
         offset: int = 0,
     ) -> list[Service]:
+        pass
+
+
+class ProviderServiceRepository(ABC):
+    @abstractmethod
+    def get(
+        self, member_id: uuid.UUID, service_id: uuid.UUID
+    ) -> ProviderService | None:
+        pass
+
+    @abstractmethod
+    def add(
+        self,
+        provider_service: ProviderService,
+    ) -> ProviderService:
+        pass
+
+    @abstractmethod
+    def delete(self, provider_service: ProviderService) -> None:
+        pass
+
+    @abstractmethod
+    def list_by_service(
+        self, service_id: uuid.UUID, *, limit: int = 50, offset: int = 0
+    ) -> list[ProviderService]:
         pass

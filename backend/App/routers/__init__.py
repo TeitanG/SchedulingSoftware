@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from App.routers import provider_service
+
 from . import (
     # appointment,
     # availability_routers,
@@ -19,3 +21,4 @@ router.include_router(business.router)
 # router.include_router(availability_routers.router)
 router.include_router(docs_router.router)
 router.include_router(business_member.router)
+router.include_router(provider_service.router)

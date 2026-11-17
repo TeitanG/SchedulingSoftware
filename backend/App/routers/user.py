@@ -18,7 +18,7 @@ def create_user(data: UserCreate, service: UserServiceDep) -> User:
 def list_users(
     service: UserServiceDep,
     active: bool | None = None,
-    limit: Annotated[int, Query(ge=1, le=100)] = 5,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[User]:
     return service.list_all(active=active, limit=limit, offset=offset)

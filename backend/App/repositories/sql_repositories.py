@@ -5,11 +5,13 @@ from sqlmodel import Session, col, select
 
 from App.db.models import Business, User
 from App.db.models.business_members import BusinessMembers
+from App.db.models.provider_service import ProviderService
 from App.db.models.service import Service
 
 from .repositories import (
     BusinessMemberRepository,
     BusinessRepository,
+    ProviderServiceRepository,
     ServiceRepository,
     UserRepository,
 )
@@ -89,7 +91,7 @@ class SQLUserRepository(UserRepository):
         return user
 
 
-class SQLModelBusinessMembersRepository(BusinessMemberRepository):
+class SQLBusinessMembersRepository(BusinessMemberRepository):
     def __init__(self, session: Session):
         self.session = session
 
@@ -184,4 +186,42 @@ class SQLServiceRepository(ServiceRepository):
         )
         if active is not None:
             statement = statement.where(Service.active == active)
+        return list(self.session.exec(statement).all())
+
+
+class SQLProviderServiceRepository(ProviderServiceRepository):
+    def __init__(self, session: Session):
+        self.session = session
+
+    def get(
+        self, member_id: uuid.UUID, service_id: uuid.UUID
+    ) -> ProviderService | None:
+        return self.session.get(
+            ProviderService, {"member_id": member_id, "service_id": service_id}
+        )
+
+    def add(self, provider_service: ProviderService) -> ProviderService:
+        self.session.add(provider_service)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise
+        self.session.refresh(provider_service)
+        return provider_service
+
+    def delete(self, provider_service: ProviderService) -> None:
+        self.session.delete(provider_service)
+        self.session.commit()
+
+    def list_by_service(
+        self, service_id: uuid.UUID, *, limit: int = 50, offset: int = 0
+    ) -> list[ProviderService]:
+        statement = (
+            select(ProviderService)
+            .where(ProviderService.service_id == service_id)
+            .order_by(col(ProviderService.created_at))
+            .offset(offset)
+            .limit(limit)
+        )
         return list(self.session.exec(statement).all())

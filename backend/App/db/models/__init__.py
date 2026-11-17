@@ -15,8 +15,17 @@ from .business_members import (  # noqa: F401
     BusinessMembersUpdate,
 )
 from .common import utc_now  # noqa: F401
-from .provider_service import ProviderService  # noqa: F401
-from .service import Service  # noqa: F401
+from .provider_service import (  # noqa: F401
+    ProviderService,
+    ProviderServiceCreate,
+    ProviderServicePublic,
+)
+from .service import (  # noqa: F401
+    Service,
+    ServiceCreate,
+    ServicePublic,
+    ServiceUpdate,
+)
 from .user import (  # noqa: F401
     User,
     UserCreate,
