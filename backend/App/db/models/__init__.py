@@ -1,6 +1,12 @@
 from .appointment import Appointment, AppointmentStatus  # noqa:F401
 from .appointment_status_history import AppointmentStatusHistory  # noqa: F401
-from .availability import Avaibility, DaysOfTheWeek  # noqa:F401
+from .availability import (  # noqa: F401
+    Availability,
+    AvailabilityCreate,
+    AvailabilityPublic,
+    AvailabilityUpdate,
+    DaysOfTheWeek,
+)
 from .business import (  # noqa: F401
     Business,
     BusinessCreate,
@@ -14,7 +20,9 @@ from .business_members import (  # noqa: F401
     BusinessMembersPublic,
     BusinessMembersUpdate,
 )
-from .common import utc_now  # noqa: F401
+from .common import (  # noqa: F401
+    utc_now,
+)
 from .provider_service import (  # noqa: F401
     ProviderService,
     ProviderServiceCreate,

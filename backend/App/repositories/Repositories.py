@@ -1,7 +1,9 @@
 import uuid
 from abc import ABC, abstractmethod
+from datetime import time
 
 from App.db.models import Business
+from App.db.models.availability import Availability, DaysOfTheWeek
 from App.db.models.business_members import BusinessMembers
 from App.db.models.provider_service import ProviderService
 from App.db.models.service import Service
@@ -122,4 +124,40 @@ class ProviderServiceRepository(ABC):
     def list_by_service(
         self, service_id: uuid.UUID, *, limit: int = 50, offset: int = 0
     ) -> list[ProviderService]:
+        pass
+
+
+class AvailabilityRepository(ABC):
+    @abstractmethod
+    def get(self, availability_id: uuid.UUID) -> Availability | None:
+        pass
+
+    @abstractmethod
+    def add(self, availability: Availability) -> Availability:
+        pass
+
+    @abstractmethod
+    def update(self, availability: Availability, changes: dict) -> Availability:
+        pass
+
+    @abstractmethod
+    def list_by_member(
+        self,
+        member_id: uuid.UUID,
+        *,
+        active: bool | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Availability]:
+        pass
+
+    @abstractmethod
+    def find_overlapping(
+        self,
+        member_id: uuid.UUID,
+        day: DaysOfTheWeek,
+        start_time: time,
+        end_time: time,
+        excluded_id: uuid.UUID | None = None,
+    ) -> Availability | None:
         pass

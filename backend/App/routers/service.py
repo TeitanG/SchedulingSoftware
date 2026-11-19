@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, status
 from App.db.models.service import Service, ServiceCreate, ServicePublic, ServiceUpdate
 from App.dependencies.dependencies import ServiceServiceDep
 
-router = APIRouter(prefix="/business/{business_id}/services", tags=["service"])
+router = APIRouter(prefix="/business/{business_id}/services", tags=["Service"])
 
 
 @router.post("/", response_model=ServicePublic, status_code=status.HTTP_201_CREATED)

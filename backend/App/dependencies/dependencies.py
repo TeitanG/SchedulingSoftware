@@ -5,12 +5,14 @@ from sqlmodel import Session
 
 from App.db.engine import get_session
 from App.repositories.sql_repositories import (
+    SQLAvailabilityRepository,
     SQLBusinessMembersRepository,
     SQLBusinessRepository,
     SQLProviderServiceRepository,
     SQLServiceRepository,
     SQLUserRepository,
 )
+from App.service.availability import AvailabilityService
 from App.service.business import BusinessService
 from App.service.business_member import BusinessMemberService
 from App.service.service import ServiceService
@@ -51,6 +53,13 @@ def get_provider_service(session: SessionDep) -> ServiceProviderService:
     )
 
 
+def get_availability_service(session: SessionDep) -> AvailabilityService:
+    return AvailabilityService(
+        SQLAvailabilityRepository(session),
+        SQLBusinessMembersRepository(session),
+    )
+
+
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 BusinessServiceDep = Annotated[BusinessService, Depends(get_business_service)]
 BusinessMemberServiceDep = Annotated[
@@ -58,3 +67,6 @@ BusinessMemberServiceDep = Annotated[
 ]
 ServiceServiceDep = Annotated[ServiceService, Depends(get_service_service)]
 ProviderServiceDep = Annotated[ServiceProviderService, Depends(get_provider_service)]
+AvailabilityServiceDep = Annotated[
+    AvailabilityService, Depends(get_availability_service)
+]

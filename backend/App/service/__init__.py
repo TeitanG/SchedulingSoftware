@@ -1,3 +1,9 @@
+# from .appointment import (
+#     AppointmentService,  
+# )
+from .availability import (
+    AvailabilityService,  # noqa: F401
+)
 from .business import (
     BusinessService,  # noqa: F401
 )

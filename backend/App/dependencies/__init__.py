@@ -1,4 +1,5 @@
 from App.dependencies.dependencies import (
+    AvailabilityServiceDep,  # noqa: F401
     BusinessServiceDep,  # noqa: F401
     SessionDep,  # noqa: F401
     UserService,  # noqa: F401

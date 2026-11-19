@@ -12,7 +12,7 @@ from App.dependencies.dependencies import ProviderServiceDep
 
 router = APIRouter(
     prefix="/business/{business_id}/services/{service_id}/providers",
-    tags=["provider_service"],
+    tags=["Provider_service"],
 )
 
 
