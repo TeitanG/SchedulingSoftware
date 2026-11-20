@@ -16,6 +16,7 @@ Base de datos
     Borrado real en provider_services: la fila solo representa la relación y nada apunta a ella; las citas referencian al miembro y al servicio directamente.
     created_at / updated_at con TIMESTAMPTZ y utc_now(); updated_at con onupdate de SQLAlchemy (no cubre cambios hechos con SQL a mano).
     Índices pensados para consultas frecuentes: appointments(provider_id, starts_at) y appointment_status_history(appointment_id, changed_at). Postgres no indexa claves foráneas automáticamente.
+    Bloqueo FOR UPDATE del proveedor al crear citas para evitar overbooking
 
 Modelo de dominio
 
@@ -31,6 +32,7 @@ Modelo de dominio
     Teléfonos en formato internacional E.164 (+573001234567); se exige el prefijo de país, sin columna de región.
     Dirección / descripción vacías se guardan como NULL (empty_to_none); los nombres se limpian con strip() (clean_name).
     Historial de estados de citas en tabla aparte (appointment_status_history), solo de inserción (sin updated_at), con changed_by = usuario que hizo el cambio.
+    Las citas y los bloques no pueden cruzar la medianoche. Si un cliente necesita turnos nocturnos, ver la opción de bloques con end_time < start_time
 
 API
 

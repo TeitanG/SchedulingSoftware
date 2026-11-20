@@ -1,22 +1,11 @@
 import uuid
 from datetime import datetime, time
-from enum import Enum
 
 from pydantic import field_validator, model_validator
 from sqlalchemy import CheckConstraint, DateTime
 from sqlmodel import Field, SQLModel
 
-from .common import utc_now
-
-
-class DaysOfTheWeek(str, Enum):
-    monday = "monday"
-    tuesday = "tuesday"
-    wednesday = "wednesday"
-    thursday = "thursday"
-    friday = "friday"
-    saturday = "saturday"
-    sunday = "sunday"
+from .common import DaysOfTheWeek, utc_now
 
 
 class AvailabilityBase(SQLModel):

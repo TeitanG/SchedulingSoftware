@@ -4,14 +4,17 @@ from datetime import datetime
 from sqlalchemy import DateTime, Index
 from sqlmodel import Field, SQLModel
 
-from .appointment import AppointmentStatus
-from .common import utc_now
+from .common import AppointmentStatus, utc_now
 
 
 class AppointmentStatusHistory(SQLModel, table=True):
     __tablename__ = "appointments_status_history"  # type: ignore
     __table_args__ = (
-        Index("appointment_status_history_appointment", "appointment_id", "changed_at"),
+        Index(
+            "appointments_status_history_appointment_changed",
+            "appointment_id",
+            "changed_at",
+        ),
     )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -25,3 +28,12 @@ class AppointmentStatusHistory(SQLModel, table=True):
         default_factory=utc_now,
         sa_type=DateTime(timezone=True),
     )
+
+
+class AppointmentStatusHistoryPublic(SQLModel):
+    id: uuid.UUID
+    appointment_id: uuid.UUID
+    old_status: AppointmentStatus | None
+    new_status: AppointmentStatus
+    changed_at: datetime
+    changed_by: uuid.UUID

@@ -1,16 +1,22 @@
 import uuid
-from datetime import time
+from datetime import datetime, time
 
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
 
 from App.db.models import Business, User
+from App.db.models.appointment import Appointment
+from App.db.models.appointment_status_history import AppointmentStatusHistory
 from App.db.models.availability import Availability, DaysOfTheWeek
 from App.db.models.business_members import BusinessMembers
+from App.db.models.common import AppointmentStatus
 from App.db.models.provider_service import ProviderService
 from App.db.models.service import Service
 
 from .repositories import (
+    AppointmentRepository,
+    AppointmentStatusHistoryRepository,
     AvailabilityRepository,
     BusinessMemberRepository,
     BusinessRepository,
@@ -143,6 +149,14 @@ class SQLBusinessMembersRepository(BusinessMemberRepository):
             statement = statement.where(BusinessMembers.active == active)
         return list(self.session.exec(statement).all())
 
+    def lock_provider(self, provider_id: uuid.UUID) -> BusinessMembers | None:
+        statement = (
+            select(BusinessMembers)
+            .where(BusinessMembers.id == provider_id)
+            .with_for_update()
+        )
+        return self.session.exec(statement).one_or_none()
+
 
 class SQLServiceRepository(ServiceRepository):
     def __init__(self, session: Session):
@@ -258,6 +272,25 @@ class SQLAvailabilityRepository(AvailabilityRepository):
         self.session.refresh(availability)
         return availability
 
+    def list_by_member(
+        self,
+        member_id: uuid.UUID,
+        *,
+        active: bool | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Availability]:
+        statement = (
+            select(Availability)
+            .where(Availability.member_id == member_id)
+            .order_by(Availability.day, col(Availability.start_time))
+            .offset(offset)
+            .limit(limit)
+        )
+        if active is not None:
+            statement = statement.where(Availability.active == active)
+        return list(self.session.exec(statement).all())
+
     def find_overlapping(
         self,
         member_id: uuid.UUID,
@@ -277,21 +310,116 @@ class SQLAvailabilityRepository(AvailabilityRepository):
             statement = statement.where(Availability.id != excluded_id)
         return self.session.exec(statement).first()
 
-    def list_by_member(
+    def list_active_by_member_and_day(
         self,
         member_id: uuid.UUID,
-        *,
-        active: bool | None = None,
-        limit: int = 50,
-        offset: int = 0,
+        day: DaysOfTheWeek,
     ) -> list[Availability]:
         statement = (
-            select(Availability)
-            .where(Availability.member_id == member_id)
-            .order_by(Availability.day, col(Availability.start_time))
-            .offset(offset)
-            .limit(limit)
+            select(
+                Availability,
+            )
+            .where(
+                Availability.member_id == member_id,
+                Availability.day == day,
+                Availability.active == True,
+            )
+            .order_by(col(Availability.start_time))
         )
-        if active is not None:
-            statement = statement.where(Availability.active == active)
+        return list(self.session.exec(statement).all())
+
+
+class SQLAppointmentRepository(AppointmentRepository):
+    def __init__(self, session: Session):
+        self.session = session
+
+    def get(self, appointment_id: uuid.UUID) -> Appointment | None:
+        return self.session.get(Appointment, appointment_id)
+
+    def list_by_business(
+        self,
+        business_id: uuid.UUID,
+        *,
+        status: AppointmentStatus | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Appointment]:
+        statement = (
+            select(Appointment)
+            .join(Service, col(Service.id) == col(Appointment.service_id))
+            .where(Service.business_id == business_id)
+        )
+
+        if status is not None:
+            statement = statement.where(Appointment.status == status)
+
+        statement = (
+            statement.order_by(col(Appointment.starts_at)).offset(offset).limit(limit)
+        )
+
+        return list(self.session.exec(statement).all())
+
+    def count_overlapping(
+        self, provider_id: uuid.UUID, starts_at: datetime, ends_at: datetime
+    ) -> int:
+        statement = (
+            select(func.count())
+            .select_from(Appointment)
+            .where(
+                Appointment.provider_id == provider_id,
+                col(Appointment.starts_at) < ends_at,
+                col(Appointment.ends_at) > starts_at,
+                col(Appointment.status).in_(
+                    [AppointmentStatus.pending, AppointmentStatus.confirmed]
+                ),
+            )
+        )
+        return self.session.exec(statement).one()
+
+    def add_with_history(
+        self, appointment: Appointment, history: AppointmentStatusHistory
+    ) -> Appointment:
+        self.session.add(appointment)
+        self.session.add(history)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise
+        self.session.refresh(appointment)
+        return appointment
+
+    def update_status(
+        self, appointment: Appointment, history: AppointmentStatusHistory
+    ) -> Appointment:
+        appointment.status = history.new_status
+
+        self.session.add(appointment)
+        self.session.add(history)
+
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise
+
+        self.session.refresh(appointment)
+        return appointment
+
+
+class SQLAppointmentStatusHistoryRepository(AppointmentStatusHistoryRepository):
+    def __init__(self, session: Session):
+        self.session = session
+
+    def list_by_appointment(
+        self, appointment_id: uuid.UUID, limit: int, offset: int
+    ) -> list[AppointmentStatusHistory]:
+        statement = (
+            select(AppointmentStatusHistory)
+            .where(AppointmentStatusHistory.appointment_id == appointment_id)
+            .order_by(col(AppointmentStatusHistory.changed_at))
+            .limit(limit)
+            .offset(offset)
+        )
+
         return list(self.session.exec(statement).all())

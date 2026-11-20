@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from enum import Enum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import phonenumbers
@@ -9,6 +10,9 @@ EMAIL_MAX = 255
 PHONE_MAX = 20
 TIMEZONE_MAX = 64
 DESCRIPTION_MAX = 255
+NOTES_MAX = 255
+BOOKING_CODE_MAX = 20
+CONSENT_VERSION_MAX = 20
 
 
 def utc_now() -> datetime:
@@ -47,3 +51,31 @@ def clean_name(value: str) -> str:
     if not value:
         raise ValueError("Name cannot be empty")
     return value
+
+
+class AppointmentStatus(str, Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    completed = "completed"
+    canceled = "canceled"
+
+
+class DaysOfTheWeek(str, Enum):
+    monday = "monday"
+    tuesday = "tuesday"
+    wednesday = "wednesday"
+    thursday = "thursday"
+    friday = "friday"
+    saturday = "saturday"
+    sunday = "sunday"
+
+
+WEEKDAYS = (
+    DaysOfTheWeek.monday,
+    DaysOfTheWeek.tuesday,
+    DaysOfTheWeek.wednesday,
+    DaysOfTheWeek.thursday,
+    DaysOfTheWeek.friday,
+    DaysOfTheWeek.saturday,
+    DaysOfTheWeek.sunday,
+)

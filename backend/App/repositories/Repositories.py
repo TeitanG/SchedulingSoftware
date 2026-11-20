@@ -1,10 +1,13 @@
 import uuid
 from abc import ABC, abstractmethod
-from datetime import time
+from datetime import datetime, time
 
 from App.db.models import Business
-from App.db.models.availability import Availability, DaysOfTheWeek
+from App.db.models.appointment import Appointment
+from App.db.models.appointment_status_history import AppointmentStatusHistory
+from App.db.models.availability import Availability
 from App.db.models.business_members import BusinessMembers
+from App.db.models.common import AppointmentStatus, DaysOfTheWeek
 from App.db.models.provider_service import ProviderService
 from App.db.models.service import Service
 from App.db.models.user import User
@@ -74,6 +77,10 @@ class BusinessMemberRepository(ABC):
         limit: int = 50,
         offset: int = 0,
     ) -> list[BusinessMembers]:
+        pass
+
+    @abstractmethod
+    def lock_provider(self, provider_id: uuid.UUID) -> BusinessMembers | None:
         pass
 
 
@@ -160,4 +167,55 @@ class AvailabilityRepository(ABC):
         end_time: time,
         excluded_id: uuid.UUID | None = None,
     ) -> Availability | None:
+        pass
+
+    @abstractmethod
+    def list_active_by_member_and_day(
+        self,
+        member_id: uuid.UUID,
+        day: DaysOfTheWeek,
+    ) -> list[Availability]:
+        pass
+
+
+class AppointmentRepository(ABC):
+    @abstractmethod
+    def get(self, appointment_id: uuid.UUID) -> Appointment | None:
+        pass
+
+    @abstractmethod
+    def list_by_business(
+        self,
+        business_id: uuid.UUID,
+        *,
+        status: AppointmentStatus | None,
+        limit: int,
+        offset: int,
+    ) -> list[Appointment]:
+        pass
+
+    @abstractmethod
+    def count_overlapping(
+        self, provider_id: uuid.UUID, starts_at: datetime, ends_at: datetime
+    ) -> int:
+        pass
+
+    @abstractmethod
+    def add_with_history(
+        self, appointment: Appointment, history: AppointmentStatusHistory
+    ) -> Appointment:
+        pass
+
+    @abstractmethod
+    def update_status(
+        self, appointment: Appointment, history: AppointmentStatusHistory
+    ) -> Appointment:
+        pass
+
+
+class AppointmentStatusHistoryRepository(ABC):
+    @abstractmethod
+    def list_by_appointment(
+        self, appointment_id: uuid.UUID, limit: int, offset: int
+    ) -> list[AppointmentStatusHistory]:
         pass
