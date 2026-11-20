@@ -7,11 +7,9 @@ from sqlalchemy.exc import IntegrityError
 from App.db.models.business_members import BusinessMembers
 from App.db.models.provider_service import ProviderService, ProviderServiceCreate
 from App.db.models.service import Service
-from App.repositories.repositories import (
-    BusinessMemberRepository,
-    ProviderServiceRepository,
-    ServiceRepository,
-)
+from App.repositories.business_member import BusinessMemberRepository
+from App.repositories.provider_service import ProviderServiceRepository
+from App.repositories.service_repository import ServiceRepository
 from App.service.errors import conflict_message
 
 UNIQUE_MESSAGES = {

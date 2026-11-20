@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 from App.db.models import User, UserCreate, UserUpdate
-from App.repositories.repositories import UserRepository
+from App.repositories.user import UserRepository
 from App.service.errors import conflict_message
 
 UNIQUE_MESSAGES = {"users_email_unique": "A user with that email already exists"}

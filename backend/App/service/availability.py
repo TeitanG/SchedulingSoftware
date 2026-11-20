@@ -8,10 +8,8 @@ from App.db.models.availability import (
     AvailabilityUpdate,
 )
 from App.db.models.business_members import BusinessMembers
-from App.repositories.repositories import (
-    AvailabilityRepository,
-    BusinessMemberRepository,
-)
+from App.repositories.availability import AvailabilityRepository
+from App.repositories.business_member import BusinessMemberRepository
 
 
 class AvailabilityService:

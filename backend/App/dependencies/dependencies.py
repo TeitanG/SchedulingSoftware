@@ -4,14 +4,12 @@ from fastapi import Depends
 from sqlmodel import Session
 
 from App.db.engine import get_session
-from App.repositories.sql_repositories import (
-    SQLAvailabilityRepository,
-    SQLBusinessMembersRepository,
-    SQLBusinessRepository,
-    SQLProviderServiceRepository,
-    SQLServiceRepository,
-    SQLUserRepository,
-)
+from App.repositories.availability import SQLAvailabilityRepository
+from App.repositories.business import SQLBusinessRepository
+from App.repositories.business_member import SQLBusinessMembersRepository
+from App.repositories.provider_service import SQLProviderServiceRepository
+from App.repositories.service_repository import SQLServiceRepository
+from App.repositories.user import SQLUserRepository
 from App.service.availability import AvailabilityService
 from App.service.business import BusinessService
 from App.service.business_member import BusinessMemberService

@@ -9,11 +9,9 @@ from App.db.models.business_members import (
     BusinessMembersCreate,
     BusinessMembersUpdate,
 )
-from App.repositories.repositories import (
-    BusinessMemberRepository,
-    BusinessRepository,
-    UserRepository,
-)
+from App.repositories.business import BusinessRepository
+from App.repositories.business_member import BusinessMemberRepository
+from App.repositories.user import UserRepository
 from App.service.errors import conflict_message
 
 UNIQUE_MESSAGES = {

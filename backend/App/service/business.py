@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 from App.db.models import Business, BusinessCreate, BusinessUpdate
-from App.repositories.repositories import BusinessRepository
+from App.repositories.business import BusinessRepository
 from App.service.errors import conflict_message
 
 UNIQUE_MESSAGES = {

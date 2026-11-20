@@ -5,7 +5,8 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 from App.db.models.service import Service, ServiceCreate, ServiceUpdate
-from App.repositories.repositories import BusinessRepository, ServiceRepository
+from App.repositories.business import BusinessRepository
+from App.repositories.service_repository import ServiceRepository
 from App.service.errors import conflict_message
 
 UNIQUE_MESSAGES = {

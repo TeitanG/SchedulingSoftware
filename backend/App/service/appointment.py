@@ -10,15 +10,13 @@ from sqlalchemy.exc import IntegrityError
 from App.db.models.appointment import Appointment, AppointmentCreate
 from App.db.models.appointment_status_history import AppointmentStatusHistory
 from App.db.models.common import WEEKDAYS, AppointmentStatus, utc_now
-from App.repositories.repositories import (
-    AppointmentRepository,
-    AvailabilityRepository,
-    BusinessMemberRepository,
-    BusinessRepository,
-    ProviderServiceRepository,
-    ServiceRepository,
-    UserRepository,
-)
+from App.repositories.appointment import AppointmentRepository
+from App.repositories.availability import AvailabilityRepository
+from App.repositories.business import BusinessRepository
+from App.repositories.business_member import BusinessMemberRepository
+from App.repositories.provider_service import ProviderServiceRepository
+from App.repositories.service_repository import ServiceRepository
+from App.repositories.user import UserRepository
 from App.service.errors import conflict_message
 
 UNIQUE_MESSAGES = {
