@@ -10,7 +10,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.post("/", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
-def create_user(data: UserCreate, service: UserServiceDep) -> User:
+def create_user(service: UserServiceDep, data: UserCreate) -> User:
     return service.create(data)
 
 
@@ -25,10 +25,17 @@ def list_users(
 
 
 @router.get("/{user_id}", response_model=UserPublic)
-def get_user(user_id: uuid.UUID, service: UserServiceDep) -> User:
+def get_user(
+    service: UserServiceDep,
+    user_id: uuid.UUID,
+) -> User:
     return service.get(user_id)
 
 
 @router.patch("/{user_id}", response_model=UserPublic)
-def update_user(user_id: uuid.UUID, data: UserUpdate, service: UserServiceDep) -> User:
+def update_user(
+    service: UserServiceDep,
+    user_id: uuid.UUID,
+    data: UserUpdate,
+) -> User:
     return service.update(user_id, data)

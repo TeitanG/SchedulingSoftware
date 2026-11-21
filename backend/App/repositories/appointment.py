@@ -28,6 +28,12 @@ class AppointmentRepository(ABC):
         pass
 
     @abstractmethod
+    def get_by_business(
+        self, *, appointment_id: uuid.UUID, business_id: uuid.UUID
+    ) -> Appointment | None:
+        pass
+
+    @abstractmethod
     def count_overlapping(
         self, provider_id: uuid.UUID, starts_at: datetime, ends_at: datetime
     ) -> int:
@@ -43,6 +49,10 @@ class AppointmentRepository(ABC):
     def update_status(
         self, appointment: Appointment, history: AppointmentStatusHistory
     ) -> Appointment:
+        pass
+
+    @abstractmethod
+    def update_notes(self, appointment: Appointment, notes: str | None) -> Appointment:
         pass
 
 
@@ -71,7 +81,9 @@ class SQLAppointmentRepository(AppointmentRepository):
             statement = statement.where(Appointment.status == status)
 
         statement = (
-            statement.order_by(col(Appointment.starts_at)).offset(offset).limit(limit)
+            statement.order_by(col(Appointment.starts_at), col(Appointment.id))
+            .offset(offset)
+            .limit(limit)
         )
 
         return list(self.session.exec(statement).all())
@@ -92,6 +104,16 @@ class SQLAppointmentRepository(AppointmentRepository):
             )
         )
         return self.session.exec(statement).one()
+
+    def get_by_business(
+        self, *, appointment_id: uuid.UUID, business_id: uuid.UUID
+    ) -> Appointment | None:
+        statement = (
+            select(Appointment)
+            .join(Service, col(Service.id) == col(Appointment.service_id))
+            .where(Appointment.id == appointment_id, Service.business_id == business_id)
+        )
+        return self.session.exec(statement).one_or_none()
 
     def add_with_history(
         self, appointment: Appointment, history: AppointmentStatusHistory
@@ -120,5 +142,16 @@ class SQLAppointmentRepository(AppointmentRepository):
             self.session.rollback()
             raise
 
+        self.session.refresh(appointment)
+        return appointment
+
+    def update_notes(self, appointment: Appointment, notes: str | None) -> Appointment:
+        appointment.notes = notes
+        self.session.add(appointment)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise
         self.session.refresh(appointment)
         return appointment

@@ -23,7 +23,9 @@ class AppointmentStatusHistory(SQLModel, table=True):
     )
     old_status: AppointmentStatus | None = Field(default=None)
     new_status: AppointmentStatus
-    changed_by: uuid.UUID = Field(foreign_key="users.id", ondelete="RESTRICT")
+    changed_by: uuid.UUID | None = Field(
+        default=None, foreign_key="users.id", ondelete="RESTRICT"
+    )
     changed_at: datetime = Field(
         default_factory=utc_now,
         sa_type=DateTime(timezone=True),
@@ -36,4 +38,4 @@ class AppointmentStatusHistoryPublic(SQLModel):
     old_status: AppointmentStatus | None
     new_status: AppointmentStatus
     changed_at: datetime
-    changed_by: uuid.UUID
+    changed_by: uuid.UUID | None = Field(default=None)

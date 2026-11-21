@@ -1,15 +1,14 @@
-from appointment_history import (
-    AppointmentStatusHistoryRepository,
-    SQLAppointmentStatusHistoryRepository,
-)
-from availability import (
-    AvailabilityRepository,
-    SQLAvailabilityRepository,
-)
-
 from .appointment import (
     AppointmentRepository,
     SQLAppointmentRepository,
+)
+from .appointment_history import (
+    AppointmentStatusHistoryRepository,
+    SQLAppointmentStatusHistoryRepository,
+)
+from .availability import (
+    AvailabilityRepository,
+    SQLAvailabilityRepository,
 )
 from .business import (
     BusinessRepository,
@@ -18,6 +17,10 @@ from .business import (
 from .business_member import (
     BusinessMemberRepository,
     SQLBusinessMembersRepository,
+)
+from .customer import (
+    CustomerRepository,
+    SQLCustomerRepository,
 )
 from .provider_service import (
     ProviderService,
@@ -31,3 +34,4 @@ from .user import (
     SQLUserRepository,
     UserRepository,
 )
+

@@ -1,34 +1,33 @@
-from .appointment import (  # noqa: F401
+from .appointment import (
     Appointment,
     AppointmentCreate,
     AppointmentNotesUpdate,
     AppointmentPublic,
     AppointmentStatusUpdate,
 )
-from .appointment_status_history import (  # noqa: F401
+from .appointment_status_history import (
     AppointmentStatusHistory,
     AppointmentStatusHistoryPublic,
 )
-from .availability import (  # noqa: F401
+from .availability import (
     Availability,
     AvailabilityCreate,
     AvailabilityPublic,
     AvailabilityUpdate,
 )
-from .business import (  # noqa: F401
+from .business import (
     Business,
     BusinessCreate,
     BusinessType,
     BusinessUpdate,
 )
-from .business_members import (  # noqa: F401
+from .business_members import (
     BusinessMembers,
-    BusinessMembersBase,
     BusinessMembersCreate,
     BusinessMembersPublic,
     BusinessMembersUpdate,
 )
-from .common import (  # noqa: F401
+from .common import (
     ADDRESS_MAX,
     BOOKING_CODE_MAX,
     CONSENT_VERSION_MAX,
@@ -47,23 +46,24 @@ from .common import (  # noqa: F401
     utc_now,
     validate_timezone,
 )
-from .customer import (  # noqa: F401
+from .customer import (
+    Customer,
     CustomerCreate,
     CustomerPublic,
     CustomerUpdate,
 )
-from .provider_service import (  # noqa: F401
+from .provider_service import (
     ProviderService,
     ProviderServiceCreate,
     ProviderServicePublic,
 )
-from .service import (  # noqa: F401
+from .service import (
     Service,
     ServiceCreate,
     ServicePublic,
     ServiceUpdate,
 )
-from .user import (  # noqa: F401
+from .user import (
     User,
     UserCreate,
     UserPublic,

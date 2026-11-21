@@ -1,6 +1,6 @@
 Decisiones de diseño
 
-    Registro de decisiones y su motivo. Si algo se cambia, añadir una línea nueva con la fecha en vez de borrar la anterior. Última actualización: 2026-11-18.
+    Registro de decisiones y su motivo. Si algo se cambia, añadir una línea nueva con la fecha en vez de borrar la anterior. Última actualización: 2026-11-20.
 
 Base de datos
 
@@ -17,6 +17,8 @@ Base de datos
     created_at / updated_at con TIMESTAMPTZ y utc_now(); updated_at con onupdate de SQLAlchemy (no cubre cambios hechos con SQL a mano).
     Índices pensados para consultas frecuentes: appointments(provider_id, starts_at) y appointment_status_history(appointment_id, changed_at). Postgres no indexa claves foráneas automáticamente.
     Bloqueo FOR UPDATE del proveedor al crear citas para evitar overbooking
+    Las migraciones se versionan en Git y nunca se editan una vez compartidas.
+    (2026-11-20) Un downgrade que no se puede hacer sin perder o inventar datos no borra nada: comprueba primero y se detiene con un mensaje claro (ej. 0b9d904842cc: no vuelve changed_by a NOT NULL si hay filas con NULL).
 
 Modelo de dominio
 
@@ -33,6 +35,17 @@ Modelo de dominio
     Dirección / descripción vacías se guardan como NULL (empty_to_none); los nombres se limpian con strip() (clean_name).
     Historial de estados de citas en tabla aparte (appointment_status_history), solo de inserción (sin updated_at), con changed_by = usuario que hizo el cambio.
     Las citas y los bloques no pueden cruzar la medianoche. Si un cliente necesita turnos nocturnos, ver la opción de bloques con end_time < start_time
+    (2026-11-19) Clientes en tabla propia customers, por negocio. Sustituye a "los clientes son usuarios sin filas en business_members". Motivo (según el commit 9ae3a80): evitar problemas con la confirmación de citas. appointments.client_id apunta a customers.id.
+    (2026-11-19) Un cliente puede existir sin cuenta: user_id es opcional; si lo tiene, no se repite en el mismo negocio (UNIQUE parcial business_id + user_id).
+    (2026-11-19) Cliente con al menos un medio de contacto: CHECK (email IS NOT NULL OR phone_number IS NOT NULL). Email único por negocio sin distinguir mayúsculas (lower(email)) y teléfono único por negocio; ambos con índice parcial (solo cuando no son NULL).
+    (2026-11-19) Consentimiento de datos personales obligatorio al crear un cliente (consent = true), guardando consent_at y consent_version. email_verified_at / phone_verified_at preparados para verificar contacto más adelante.
+    (2026-11-19) customers también usa active (soft delete) y ondelete="RESTRICT": tiene citas asociadas.
+    (2026-11-20) appointment_status_history.changed_by pasa a ser opcional (migración 0b9d904842cc). NULL = cambio sin usuario autenticado (reserva pública o sistema). Sustituye a "changed_by = usuario que hizo el cambio" mientras no haya login; con JWT se rellenará con el usuario del token, nunca con un id del cuerpo ni con el id de un cliente (apunta a users, no a customers).
+    (2026-11-20) ends_at lo calcula el servidor: starts_at + services.duration. El cliente solo envía starts_at (resuelve la pregunta abierta de contexto.md).
+    (2026-11-20) Capacidad: una cita nueva cabe si las citas pending/confirmed del mismo proveedor que se solapan son menos que services.capacity (overlapping >= capacity → 409).
+    (2026-11-20) booking_code: 6 caracteres en formato XXX-XXX con alfabeto sin caracteres confusos (sin I, L, O, 0, 1), generado con secrets. Si choca con appointments_booking_code_unique se responde 409 pidiendo reintentar (31^6 ≈ 887 millones de combinaciones; reintento automático, más adelante si hace falta).
+    (2026-11-20) customers.user_id nunca viene del cuerpo de la petición (no está en CustomerCreate ni en CustomerUpdate): lo asigna el servidor a partir del usuario autenticado. Motivo: si se aceptara en el JSON, cualquiera podría vincular un cliente a la cuenta de otra persona. Hasta tener login (JWT), todos los clientes se crean sin cuenta (user_id = NULL).
+    (2026-11-20) consent_version lo pone el servidor (constante CONSENT_VERSION en App/service/customer.py, hoy "2026-11-19"). Cuando cambie la política de datos se actualiza la constante: los clientes nuevos guardan la versión nueva y los antiguos conservan la que aceptaron.
 
 API
 
@@ -57,6 +70,8 @@ Herramientas y entorno
     Configuración con pydantic-settings: la app no arranca si falta DATABASE_URL.
     ESLint (no Oxlint, por ahora) y Prettier para el frontend; Ruff y Pyright para el backend.
     Frontend: React + TypeScript + Vite, con datos falsos primero y una capa api/ aislada.
+    (2026-11-20) graphify-out/ (grafo de conocimiento generado con graphify) va en .gitignore: se regenera, contiene rutas absolutas de la máquina y ensucia los diffs.
+    (2026-11-20) Pendientes del proyecto en docs/TODO.md.
 
 Negocio
 

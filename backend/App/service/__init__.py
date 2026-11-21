@@ -1,21 +1,27 @@
-# from .appointment import (
-#     AppointmentService,  
-# )
+from .appointment import (
+    AppointmentService,
+)
+from .appointment_history import (
+    AppointmentStatusHistoryService,
+)
 from .availability import (
-    AvailabilityService,  # noqa: F401
+    AvailabilityService,
 )
 from .business import (
-    BusinessService,  # noqa: F401
+    BusinessService,
 )
 from .business_member import (
-    BusinessMemberService,  # noqa: F401
+    BusinessMemberService,
+)
+from .customer import (
+    CustomerService,
 )
 from .errors import (
-    conflict_message,  # noqa: F401
+    conflict_message,
 )
 from .service_provider import (
-    ServiceProviderService,  # noqa: F401
+    ServiceProviderService,
 )
 from .user import (
-    UserService,  # noqa: F401
+    UserService,
 )

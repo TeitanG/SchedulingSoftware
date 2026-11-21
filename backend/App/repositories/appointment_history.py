@@ -10,7 +10,11 @@ from App.db.models.appointment_status_history import AppointmentStatusHistory
 class AppointmentStatusHistoryRepository(ABC):
     @abstractmethod
     def list_by_appointment(
-        self, appointment_id: uuid.UUID, limit: int, offset: int
+        self,
+        appointment_id: uuid.UUID,
+        *,
+        limit: int,
+        offset: int,
     ) -> list[AppointmentStatusHistory]:
         pass
 
@@ -20,12 +24,19 @@ class SQLAppointmentStatusHistoryRepository(AppointmentStatusHistoryRepository):
         self.session = session
 
     def list_by_appointment(
-        self, appointment_id: uuid.UUID, limit: int, offset: int
+        self,
+        appointment_id: uuid.UUID,
+        *,
+        limit: int,
+        offset: int,
     ) -> list[AppointmentStatusHistory]:
         statement = (
             select(AppointmentStatusHistory)
             .where(AppointmentStatusHistory.appointment_id == appointment_id)
-            .order_by(col(AppointmentStatusHistory.changed_at))
+            .order_by(
+                col(AppointmentStatusHistory.changed_at),
+                (col(AppointmentStatusHistory.id)),
+            )
             .limit(limit)
             .offset(offset)
         )

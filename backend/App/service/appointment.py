@@ -7,28 +7,47 @@ from zoneinfo import ZoneInfo
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
-from App.db.models.appointment import Appointment, AppointmentCreate
+from App.db.models.appointment import (
+    Appointment,
+    AppointmentCreate,
+    AppointmentNotesUpdate,
+    AppointmentStatusUpdate,
+)
 from App.db.models.appointment_status_history import AppointmentStatusHistory
 from App.db.models.common import WEEKDAYS, AppointmentStatus, utc_now
 from App.repositories.appointment import AppointmentRepository
 from App.repositories.availability import AvailabilityRepository
 from App.repositories.business import BusinessRepository
 from App.repositories.business_member import BusinessMemberRepository
+from App.repositories.customer import CustomerRepository
 from App.repositories.provider_service import ProviderServiceRepository
 from App.repositories.service_repository import ServiceRepository
-from App.repositories.user import UserRepository
 from App.service.errors import conflict_message
 
 UNIQUE_MESSAGES = {
-    "appointments_starts_before_ends": "Start date and time must be before the end date and time"
+    "appointments_booking_code_unique": "Could not generate the booking code, try again",
 }
 
 BOOKING_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
 
 def generate_booking_code():
-    charts = "".join(secrets.choice(BOOKING_CODE_ALPHABET) for _ in range(6))
-    return f"{charts[:4]}-{charts[3:]}"
+    chars = "".join(secrets.choice(BOOKING_CODE_ALPHABET) for _ in range(6))
+    return f"{chars[:3]}-{chars[3:]}"
+
+
+ALLOWED_TRANSITIONS: dict[AppointmentStatus, set[AppointmentStatus]] = {
+    AppointmentStatus.pending: {
+        AppointmentStatus.confirmed,
+        AppointmentStatus.canceled,
+    },
+    AppointmentStatus.confirmed: {
+        AppointmentStatus.completed,
+        AppointmentStatus.canceled,
+    },
+    AppointmentStatus.completed: set(),
+    AppointmentStatus.canceled: set(),
+}
 
 
 class AppointmentService:
@@ -40,7 +59,7 @@ class AppointmentService:
         providers_services: ProviderServiceRepository,
         availabilities: AvailabilityRepository,
         business: BusinessRepository,
-        users: UserRepository,
+        customers: CustomerRepository,
     ):
         self.repo = appointments
         self.members = members
@@ -48,7 +67,7 @@ class AppointmentService:
         self.providers_services = providers_services
         self.availabilities = availabilities
         self.business = business
-        self.users = users
+        self.customers = customers
 
     def _raise_if_conflict(self, error: IntegrityError) -> NoReturn:
         message = conflict_message(error, UNIQUE_MESSAGES)
@@ -117,22 +136,22 @@ class AppointmentService:
                 detail={"Error": "The Provider does not have this service"},
             )
 
-        user = self.users.get(data.client_id)
+        client = self.customers.get(data.client_id)
 
-        if not user:
+        if not client or client.business_id != business_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={"Error": "The client does not exist"},
             )
 
-        if not user.active:
+        if not client.active:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"Error": "This client is not active"},
             )
         ends_at = data.starts_at + timedelta(minutes=service.duration)
 
-        if data.starts_at <= ends_at:
+        if ends_at <= data.starts_at:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"Error": "Start time must be before end time"},
@@ -175,7 +194,7 @@ class AppointmentService:
             blocked_provider.id, local_start, local_end
         )
 
-        if overlapping > service.capacity:
+        if overlapping >= service.capacity:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"Error": "No capacity available"},
@@ -187,10 +206,77 @@ class AppointmentService:
             appointment_id=appointment.id,
             old_status=None,
             new_status=AppointmentStatus.pending,
-            changed_by=data.client_id,
         )
 
         try:
             return self.repo.add_with_history(appointment, history)
         except IntegrityError as error:
             self._raise_if_conflict(error)
+
+    def get(self, business_id: uuid.UUID, appointment_id: uuid.UUID) -> Appointment:
+
+        appointment = self.repo.get_by_business(
+            appointment_id=appointment_id, business_id=business_id
+        )
+
+        if appointment is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"Error": "Appointment not found"},
+            )
+        return appointment
+
+    def list_by_business(
+        self,
+        business_id: uuid.UUID,
+        *,
+        appointment_status: AppointmentStatus | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[Appointment]:
+        business = self.business.get(business_id)
+
+        if business is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"Error": "Business not found"},
+            )
+
+        return self.repo.list_by_business(
+            business_id, status=appointment_status, limit=limit, offset=offset
+        )
+
+    def update_status(
+        self,
+        business_id: uuid.UUID,
+        appointment_id: uuid.UUID,
+        data: AppointmentStatusUpdate,
+    ) -> Appointment:
+
+        appointment = self.get(business_id=business_id, appointment_id=appointment_id)
+
+        current = appointment.status
+        new = data.status
+        if new not in ALLOWED_TRANSITIONS[current]:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "Error": f"Cannot change status from {current.value} to {new.value}"
+                },
+            )
+        history = AppointmentStatusHistory(
+            appointment_id=appointment.id,
+            old_status=current,
+            new_status=new,
+            changed_by=None,  # TODO: usuario del token cuando haya login
+        )
+        return self.repo.update_status(appointment, history)
+
+    def update_notes(
+        self,
+        business_id: uuid.UUID,
+        appointment_id: uuid.UUID,
+        data: AppointmentNotesUpdate,
+    ) -> Appointment:
+        appointment = self.get(business_id=business_id, appointment_id=appointment_id)
+        return self.repo.update_notes(appointment, data.notes)

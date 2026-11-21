@@ -16,7 +16,7 @@ from .common import (
 
 class AppointmentBase(SQLModel):
     starts_at: datetime = Field(sa_type=DateTime(timezone=True))
-    notes: str | None = Field(default=None, max_length=NOTES_MAX)
+    notes: str | None = Field(max_length=NOTES_MAX)
 
 
 class Appointment(AppointmentBase, table=True):
@@ -76,7 +76,7 @@ class AppointmentStatusUpdate(SQLModel):
 
 
 class AppointmentNotesUpdate(SQLModel):
-    notes: str | None = Field(default=None, max_length=NOTES_MAX)
+    notes: str | None = Field(max_length=NOTES_MAX)
 
     @field_validator("notes")
     @classmethod
