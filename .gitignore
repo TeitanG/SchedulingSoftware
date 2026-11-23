@@ -1,2 +1,36 @@
+# --- Secretos ---
 .env
+.env.*
+!.env.example
 
+# --- Python ---
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Frontend (para cuando empieces con React) ---
+node_modules/
+dist/
+.vite/
+
+# --- Editores y sistema ---
+.vscode/*
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Claude Code (configuración personal) ---
+CLAUDE.local.md
+.claude/settings.local.json
+
+# --- Archivos comprimidos y logs ---
+*.zip
+*.log
