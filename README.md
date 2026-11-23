@@ -207,7 +207,20 @@ source venv/bin/activate          # Windows: .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-**4. Configuration.** The application reads its settings from a `backend/.env` file, which each developer creates locally and which is excluded from the repository. It must define `DATABASE_URL`, pointing to the PostgreSQL instance started in step 2 (user, password, database, and port are defined in `docker-compose.yml`), and optionally `SQL_ECHO`. The application will not start without `DATABASE_URL`.
+**4. Configuration.** The application reads its settings from `backend/.env`, which is excluded from the repository. Create it from the provided template (from `backend/`):
+
+```bash
+cp .env.example .env              # Windows: Copy-Item .env.example .env
+```
+
+For local development, matching the database defined in `docker-compose.yml`:
+
+```env
+DATABASE_URL=postgresql+psycopg://app:app@localhost:5433/scheduling
+SQL_ECHO=false
+```
+
+These are the development-only credentials already defined in `docker-compose.yml`. `DATABASE_URL` is required (the application will not start without it); `SQL_ECHO=true` logs every SQL statement.
 
 ```bash
 # 5. Migrations
