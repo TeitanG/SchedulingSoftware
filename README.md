@@ -234,8 +234,15 @@ The API runs at `http://localhost:8000` and its documentation at `http://localho
 
 ## Development
 
+Development tools (Ruff, Pyright) are kept separate from the runtime dependencies. From `backend/`, with the virtual environment active:
+
+```bash
+pip install -r requirements-dev.txt   # runtime dependencies + dev tools
+```
+
 ```bash
 ruff check App          # linting
+
 ruff format App         # formatting
 pyright App             # static type checking
 alembic check           # verify that models and database schema match
