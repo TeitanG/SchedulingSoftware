@@ -6,113 +6,112 @@
 ![SQLModel](https://img.shields.io/badge/SQLModel-SQLAlchemy%202-D71F00)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
-API REST para la gestión de citas de negocios de servicios (salud, belleza, logística…): proveedores, servicios, horarios de disponibilidad, clientes y citas con historial de estados.
+REST API for appointment management in service businesses (healthcare, beauty, logistics…): providers, services, availability schedules, customers, and appointments with a full status history.
 
-El objetivo es un producto real, por lo que el foco está en la **integridad de los datos** y en las **reglas de negocio**: una cita solo se crea si el proveedor ofrece el servicio, está disponible a esa hora en la zona horaria del negocio y no se supera la capacidad, incluso con reservas simultáneas.
-
+It is built with a real product in mind, so the focus is on **data integrity** and **business rules**: an appointment is only created if the provider offers the service, is available at that time in the business's time zone, and capacity is not exceeded — even under concurrent bookings.
 
 ---
 
-## Índice
+## Table of contents
 
-- [Funcionalidades](#funcionalidades)
-- [Decisiones técnicas destacadas](#decisiones-técnicas-destacadas)
-- [Stack](#stack)
-- [Arquitectura](#arquitectura)
-- [Modelo de datos](#modelo-de-datos)
+- [Features](#features)
+- [Key technical decisions](#key-technical-decisions)
+- [Tech stack](#tech-stack)
+- [Architecture](#architecture)
+- [Data model](#data-model)
 - [API](#api)
-- [Puesta en marcha](#puesta-en-marcha)
-- [Desarrollo](#desarrollo)
-- [Hoja de ruta](#hoja-de-ruta)
+- [Getting started](#getting-started)
+- [Development](#development)
+- [Roadmap](#roadmap)
 
 ---
 
-## Funcionalidades
+## Features
 
-- **Negocios** con zona horaria propia (IANA) y moneda (COP / USD).
-- **Usuarios y roles:** una persona puede pertenecer a varios negocios con roles distintos (administrador, proveedor o ambos).
-- **Servicios** con duración, precio y capacidad de citas simultáneas, ofrecidos por uno o varios proveedores.
-- **Disponibilidad semanal** por proveedor, en hora local del negocio, sin bloques solapados.
-- **Clientes por negocio**, con o sin cuenta de usuario y con registro del consentimiento de datos personales.
-- **Reserva de citas** con validación completa (servicio, proveedor, disponibilidad, capacidad, fechas).
-- **Ciclo de vida de la cita** con transiciones controladas e historial de cada cambio de estado.
-- **Código de reserva legible** (`K7M-29Q`) para mostrar al cliente.
+- **Businesses** with their own time zone (IANA) and currency (COP / USD).
+- **Users and roles:** a person can belong to several businesses with different roles (admin, provider, or both).
+- **Services** with duration, price, and concurrent-appointment capacity, offered by one or more providers.
+- **Weekly availability** per provider, in the business's local time, with no overlapping blocks.
+- **Per-business customers**, with or without a user account, including a record of personal-data consent.
+- **Appointment booking** with full validation (service, provider, availability, capacity, dates).
+- **Appointment lifecycle** with controlled status transitions and a history entry for every change.
+- **Human-readable booking code** (`K7M-29Q`) to share with the customer.
 
-## Decisiones técnicas destacadas
+## Key technical decisions
 
-| Problema | Solución |
+| Problem | Solution |
 |---|---|
-| Dos reservas simultáneas podrían superar la capacidad (*overbooking*) | Bloqueo `SELECT … FOR UPDATE` del proveedor antes de contar las citas solapadas: las reservas concurrentes del mismo proveedor se serializan. |
-| Las citas son instantes, pero los horarios son "hora de reloj" local | Las citas se guardan como `TIMESTAMPTZ` (UTC) y la disponibilidad como `TIME` local. Para validar, la cita se convierte a la zona horaria del negocio (`zoneinfo`), lo que soporta horario de verano y negocios en distintos países. |
-| La cita y su primera fila de historial deben guardarse juntas | Se insertan en una única transacción: se guardan las dos o ninguna. |
-| Validaciones que pueden quedar desincronizadas | Cada regla vive en dos capas que dicen lo mismo: restricciones de PostgreSQL (`CHECK`, `UNIQUE`, `NOT NULL`) como red de seguridad, y Pydantic para responder `422` con un mensaje claro. |
-| Errores de unicidad poco descriptivos | Las violaciones `UNIQUE` se traducen a `409` por el nombre de la restricción; cualquier otra violación de integridad no se oculta, para detectar validaciones que faltan. |
-| Datos con historia que no se pueden perder | Borrado lógico (`active`) y claves foráneas `ON DELETE RESTRICT`. |
-| Recursos de un negocio accesibles desde otro | Rutas anidadas (`/business/{business_id}/…`) y comprobación de pertenencia en cada operación: un recurso de otro negocio responde `404`, igual que uno inexistente. |
-| Identificadores predecibles | Claves primarias UUID; el código de reserva legible es un campo aparte, generado con `secrets`. |
-| Evolución del esquema | Migraciones versionadas con Alembic desde el primer día; los `downgrade` que perderían datos se detienen con un mensaje en lugar de borrar. |
+| Two simultaneous bookings could exceed capacity (*overbooking*) | The provider row is locked with `SELECT … FOR UPDATE` before counting overlapping appointments, so concurrent bookings for the same provider are serialized. |
+| Appointments are points in time, but schedules are local "wall-clock" time | Appointments are stored as `TIMESTAMPTZ` (UTC) and availability as local `TIME`. To validate, the appointment is converted to the business's time zone (`zoneinfo`), which handles daylight saving time and businesses in different countries. |
+| An appointment and its first history row must be saved together | Both are inserted in a single transaction: either both are saved or neither is. |
+| Validation rules drifting out of sync | Each rule lives in two layers that state the same thing: PostgreSQL constraints (`CHECK`, `UNIQUE`, `NOT NULL`) as a safety net, and Pydantic to return a clear `422` message. |
+| Unhelpful uniqueness errors | `UNIQUE` violations are mapped to `409` by constraint name; any other integrity violation is not hidden, so missing validations surface immediately. |
+| Records with history that must never be lost | Soft deletes (`active`) and `ON DELETE RESTRICT` foreign keys. |
+| One business's resources reachable from another | Nested routes (`/business/{business_id}/…`) and an ownership check on every operation: a resource from another business returns `404`, exactly like a non-existent one. |
+| Guessable identifiers | UUID primary keys; the readable booking code is a separate field generated with `secrets`. |
+| Schema evolution | Alembic migrations, version-controlled from day one; downgrades that would lose data stop with a clear message instead of deleting it. |
 
-El registro completo de decisiones, con su motivo, está en [`backend/docs/DESICIONES.md`](backend/docs/DESICIONES.md).
+The full design decision log, with the reasoning behind each choice, is in [`backend/docs/DESICIONES.md`](backend/docs/DESICIONES.md) (Spanish).
 
-## Stack
+## Tech stack
 
-| Pieza | Tecnología |
+| Component | Technology |
 |---|---|
-| Lenguaje | Python 3.13 |
-| Framework web | FastAPI |
-| ORM y modelos | SQLModel (SQLAlchemy 2 + Pydantic 2) |
-| Base de datos | PostgreSQL 17 en Docker |
+| Language | Python 3.13 |
+| Web framework | FastAPI |
+| ORM and models | SQLModel (SQLAlchemy 2 + Pydantic 2) |
+| Database | PostgreSQL 17 on Docker |
 | Driver | psycopg 3 |
-| Migraciones | Alembic |
-| Configuración | pydantic-settings |
-| Documentación de la API | OpenAPI + Scalar |
-| Calidad de código | Ruff (lint y formato), Pyright (tipado estático) |
+| Migrations | Alembic |
+| Configuration | pydantic-settings |
+| API documentation | OpenAPI + Scalar |
+| Code quality | Ruff (linting and formatting), Pyright (static type checking) |
 
-## Arquitectura
+## Architecture
 
-Arquitectura en capas, con una responsabilidad clara por capa:
+Layered architecture, with a single clear responsibility per layer:
 
 ```
-Router (HTTP)  →  Servicio (reglas de negocio)  →  Repositorio (acceso a datos)  →  PostgreSQL
+Router (HTTP)  →  Service (business rules)  →  Repository (data access)  →  PostgreSQL
 ```
 
-- **Router:** define las rutas, valida la entrada con modelos `Create` / `Update` y la salida con modelos `Public`.
-- **Servicio:** aplica las reglas de negocio y decide los códigos HTTP. Recibe sus repositorios por inyección de dependencias.
-- **Repositorio:** encapsula las consultas SQL detrás de una interfaz abstracta (`ABC`), lo que permite sustituir la implementación en tests.
+- **Router:** defines the endpoints, validates input with `Create` / `Update` models and output with `Public` models.
+- **Service:** enforces business rules and decides HTTP status codes. Receives its repositories through dependency injection.
+- **Repository:** encapsulates SQL queries behind an abstract interface (`ABC`), so the implementation can be swapped in tests.
 
 ```
 backend/
-├── main.py                  # punto de entrada de FastAPI
-├── alembic/                 # migraciones
-├── docs/                    # contexto, decisiones de diseño y pendientes
+├── main.py                  # FastAPI entry point
+├── alembic/                 # migrations
+├── docs/                    # context, design decisions, and backlog
 └── App/
-    ├── config.py            # configuración desde variables de entorno
-    ├── db/models/           # modelos SQLModel (tabla + Create / Public / Update)
-    ├── repositories/        # acceso a datos: interfaz abstracta + implementación SQL
-    ├── service/             # lógica de negocio
-    ├── dependencies/        # inyección de dependencias de FastAPI
-    └── routers/             # endpoints, uno por entidad
+    ├── config.py            # settings from environment variables
+    ├── db/models/           # SQLModel models (table + Create / Public / Update)
+    ├── repositories/        # data access: abstract interface + SQL implementation
+    ├── service/             # business logic
+    ├── dependencies/        # FastAPI dependency injection
+    └── routers/             # endpoints, one per entity
 ```
 
-## Modelo de datos
+## Data model
 
 ```mermaid
 erDiagram
-    BUSINESSES ||--o{ BUSINESS_MEMBERS : "tiene"
-    USERS ||--o{ BUSINESS_MEMBERS : "es miembro"
-    BUSINESSES ||--o{ SERVICES : "ofrece"
-    BUSINESSES ||--o{ CUSTOMERS : "atiende"
-    USERS |o--o{ CUSTOMERS : "cuenta opcional"
-    BUSINESS_MEMBERS ||--o{ AVAILABILITIES : "define"
-    BUSINESS_MEMBERS ||--o{ PROVIDER_SERVICES : "presta"
-    SERVICES ||--o{ PROVIDER_SERVICES : "prestado por"
-    CUSTOMERS ||--o{ APPOINTMENTS : "reserva"
-    BUSINESS_MEMBERS ||--o{ APPOINTMENTS : "atiende"
-    SERVICES ||--o{ APPOINTMENTS : "de tipo"
-    APPOINTMENTS ||--o{ APPOINTMENTS_STATUS_HISTORY : "registra"
+    BUSINESSES ||--o{ BUSINESS_MEMBERS : "has"
+    USERS ||--o{ BUSINESS_MEMBERS : "is member"
+    BUSINESSES ||--o{ SERVICES : "offers"
+    BUSINESSES ||--o{ CUSTOMERS : "serves"
+    USERS |o--o{ CUSTOMERS : "optional account"
+    BUSINESS_MEMBERS ||--o{ AVAILABILITIES : "defines"
+    BUSINESS_MEMBERS ||--o{ PROVIDER_SERVICES : "provides"
+    SERVICES ||--o{ PROVIDER_SERVICES : "provided by"
+    CUSTOMERS ||--o{ APPOINTMENTS : "books"
+    BUSINESS_MEMBERS ||--o{ APPOINTMENTS : "attends"
+    SERVICES ||--o{ APPOINTMENTS : "of type"
+    APPOINTMENTS ||--o{ APPOINTMENTS_STATUS_HISTORY : "records"
 ```
 
-**Estados de una cita:**
+**Appointment states:**
 
 ```mermaid
 stateDiagram-v2
@@ -127,32 +126,32 @@ stateDiagram-v2
 
 ## API
 
-La documentación interactiva (OpenAPI) está disponible en `/scalar` al arrancar la aplicación.
+Interactive documentation (OpenAPI) is available at `/scalar` once the application is running.
 
-| Recurso | Ruta base | Operaciones |
+| Resource | Base path | Operations |
 |---|---|---|
-| Negocios | `/business` | crear, listar, obtener, actualizar |
-| Usuarios | `/users` | crear, listar, obtener, actualizar |
-| Miembros | `/business/{business_id}/members` | crear, listar, obtener, actualizar |
-| Servicios | `/business/{business_id}/services` | crear, listar, obtener, actualizar |
-| Proveedores de un servicio | `/business/{business_id}/services/{service_id}/providers` | añadir, listar, quitar |
-| Disponibilidad | `/business/{business_id}/members/{member_id}/availabilities` | crear, listar, obtener, actualizar |
-| Clientes | `/business/{business_id}/customer` | crear, listar, obtener, actualizar |
-| Citas | `/business/{business_id}/appointments` | crear, listar (filtro por estado), obtener, cambiar estado, editar notas, historial |
+| Businesses | `/business` | create, list, get, update |
+| Users | `/users` | create, list, get, update |
+| Members | `/business/{business_id}/members` | create, list, get, update |
+| Services | `/business/{business_id}/services` | create, list, get, update |
+| Service providers | `/business/{business_id}/services/{service_id}/providers` | add, list, remove |
+| Availability | `/business/{business_id}/members/{member_id}/availabilities` | create, list, get, update |
+| Customers | `/business/{business_id}/customer` | create, list, get, update |
+| Appointments | `/business/{business_id}/appointments` | create, list (filter by status), get, change status, edit notes, history |
 
-**Convenciones:**
+**Conventions:**
 
-- Actualizaciones con `PATCH`: solo se modifican los campos enviados.
-- Paginación en todos los listados: `limit` (1–100, por defecto 50) y `offset`, con orden estable.
-- Errores con un formato único:
+- Updates use `PATCH`: only the fields sent are modified.
+- Every list endpoint is paginated: `limit` (1–100, default 50) and `offset`, with stable ordering.
+- Errors share a single format:
 
-| Código | Cuándo |
+| Code | When |
 |---|---|
-| `404` | El recurso no existe o no pertenece al negocio de la URL |
-| `409` | Conflicto con el estado actual: duplicado, recurso inactivo, sin capacidad, transición no permitida |
-| `422` | Datos inválidos |
+| `404` | The resource does not exist or does not belong to the business in the URL |
+| `409` | Conflict with the current state: duplicate, inactive resource, no capacity left, transition not allowed |
+| `422` | Invalid data |
 
-### Ejemplo: reservar una cita
+### Example: booking an appointment
 
 ```http
 POST /business/{business_id}/appointments/
@@ -163,7 +162,7 @@ Content-Type: application/json
   "provider_id": "a2b9…",
   "service_id": "d47e…",
   "starts_at": "2026-12-01T15:00:00-05:00",
-  "notes": "Primera visita"
+  "notes": "First visit"
 }
 ```
 
@@ -177,69 +176,66 @@ Content-Type: application/json
   "client_id": "6f1c…",
   "provider_id": "a2b9…",
   "service_id": "d47e…",
-  "notes": "Primera visita",
+  "notes": "First visit",
   "created_at": "2026-11-23T14:02:11Z",
   "updated_at": "2026-11-23T14:02:11Z"
 }
 ```
 
-`ends_at` lo calcula el servidor a partir de la duración del servicio. Si el proveedor no está disponible a esa hora:
+`ends_at` is computed by the server from the service duration. If the provider is not available at that time:
 
 ```json
 { "detail": { "Error": "Provider is not available at that time" } }
 ```
 
-## Puesta en marcha
+## Getting started
 
-**Requisitos:** Python 3.13 y Docker.
+**Requirements:** Python 3.13 and Docker.
 
 ```bash
-# 1. Clonar
+# 1. Clone
 git clone https://github.com/TeitanG/SchedulingSoftware.git
 cd SchedulingSoftware
 
-# 2. Base de datos (PostgreSQL en el puerto local 5433)
+# 2. Database (PostgreSQL on local port 5433)
 docker compose up -d
 
-# 3. Entorno virtual y dependencias
+# 3. Virtual environment and dependencies
 cd backend
 python -m venv venv
 source venv/bin/activate          # Windows: .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-**4. Configuración.** La aplicación lee sus variables de un archivo `backend/.env`, que cada desarrollador crea en local y que está excluido del repositorio. Para desarrollo, con la base de datos de `docker-compose.yml`:
-
-
-Son las credenciales de desarrollo que ya define `docker-compose.yml`; la aplicación no arranca si falta `DATABASE_URL`.
+**4. Configuration.** The application reads its settings from a `backend/.env` file, which each developer creates locally and which is excluded from the repository. It must define `DATABASE_URL`, pointing to the PostgreSQL instance started in step 2 (user, password, database, and port are defined in `docker-compose.yml`), and optionally `SQL_ECHO`. The application will not start without `DATABASE_URL`.
 
 ```bash
-# 5. Migraciones
+# 5. Migrations
 alembic upgrade head
 
-# 6. Arrancar
+# 6. Run
 uvicorn main:app --reload
 ```
 
-La API queda en `http://localhost:8000` y su documentación en `http://localhost:8000/scalar`.
+The API runs at `http://localhost:8000` and its documentation at `http://localhost:8000/scalar`.
 
-## Desarrollo
+## Development
 
 ```bash
-ruff check App          # lint
-ruff format App         # formato
-pyright App             # tipado estático
-alembic check           # comprueba que modelos y base de datos coinciden
+ruff check App          # linting
+ruff format App         # formatting
+pyright App             # static type checking
+alembic check           # verify that models and database schema match
 ```
 
-## Hoja de ruta
+## Roadmap
 
-- [x] Modelo de datos relacional y migraciones
-- [x] Negocios, usuarios, miembros, servicios y proveedores
-- [x] Disponibilidad semanal con detección de solapamientos
-- [x] Clientes
-- [x] Citas: reserva con validación, estados e historial
-- [ ] Autenticación y autorización con JWT
-- [ ] Endpoint de huecos libres para reservar
-- [ ] Tests automatizados con pytest e integración continua
-- [ ] Frontend con React + TypeScript + Vite
+- [x] Relational data model and migrations
+- [x] Businesses, users, members, services, and providers
+- [x] Weekly availability with overlap detection
+- [x] Customers
+- [x] Appointments: validated booking, statuses, and history
+- [ ] Authentication and authorization with JWT
+- [ ] Available-slots endpoint for booking
+- [ ] Automated tests with pytest and continuous integration
+- [ ] Frontend with React + TypeScript + Vite
