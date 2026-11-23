@@ -26,8 +26,7 @@ class User(UserBase, table=True):
         default_factory=utc_now, sa_type=DateTime(timezone=True)
     )
 
-    
-        
+
 class UserCreate(UserBase):
     email: EmailStr
 

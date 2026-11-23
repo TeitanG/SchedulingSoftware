@@ -34,4 +34,3 @@ from .user import (
     SQLUserRepository,
     UserRepository,
 )
-
