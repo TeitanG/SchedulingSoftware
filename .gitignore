@@ -22,7 +22,6 @@ dist/
 
 # --- Editores y sistema ---
 .vscode/*
-!.vscode/settings.json
 .idea/
 .DS_Store
 Thumbs.db
