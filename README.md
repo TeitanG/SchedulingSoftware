@@ -51,7 +51,7 @@ It is built with a real product in mind, so the focus is on **data integrity** a
 | Guessable identifiers | UUID primary keys; the readable booking code is a separate field generated with `secrets`. |
 | Schema evolution | Alembic migrations, version-controlled from day one; downgrades that would lose data stop with a clear message instead of deleting it. |
 
-The full design decision log, with the reasoning behind each choice, is in [`backend/docs/DESICIONES.md`](backend/docs/DESICIONES.md) (Spanish).
+The full design decision log, with the reasoning behind each choice, is in [`backend/docs/DECISIONES.md`](backend/docs/DECISIONES.md) (Spanish).
 
 ## Tech stack
 
@@ -207,7 +207,20 @@ source venv/bin/activate          # Windows: .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-**4. Configuration.** The application reads its settings from a `backend/.env` file, which each developer creates locally and which is excluded from the repository. It must define `DATABASE_URL`, pointing to the PostgreSQL instance started in step 2 (user, password, database, and port are defined in `docker-compose.yml`), and optionally `SQL_ECHO`. The application will not start without `DATABASE_URL`.
+**4. Configuration.** The application reads its settings from `backend/.env`, which is excluded from the repository. Create it from the provided template (from `backend/`):
+
+```bash
+cp .env.example .env              # Windows: Copy-Item .env.example .env
+```
+
+For local development, matching the database defined in `docker-compose.yml`:
+
+```env
+DATABASE_URL=postgresql+psycopg://app:app@localhost:5433/scheduling
+SQL_ECHO=false
+```
+
+These are the development-only credentials already defined in `docker-compose.yml`. `DATABASE_URL` is required (the application will not start without it); `SQL_ECHO=true` logs every SQL statement.
 
 ```bash
 # 5. Migrations
@@ -221,8 +234,15 @@ The API runs at `http://localhost:8000` and its documentation at `http://localho
 
 ## Development
 
+Development tools (Ruff, Pyright, pytest) are kept separate from the runtime dependencies. From `backend/`, with the virtual environment active:
+
+```bash
+pip install -r requirements-dev.txt   # runtime dependencies + dev tools
+```
+
 ```bash
 ruff check App          # linting
+
 ruff format App         # formatting
 pyright App             # static type checking
 alembic check           # verify that models and database schema match

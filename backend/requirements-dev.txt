@@ -1,5 +1,9 @@
 -r requirements.txt
+
+# Linting, formatting and static type checking
 ruff==0.17.5
 pyright==1.1.414
+
+# Testing
 pytest==9.2.0
 httpx==0.28.1
