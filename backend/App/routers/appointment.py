@@ -34,12 +34,12 @@ def get_appointment(
 def list_appointment(
     service: AppointmentServiceDep,
     business_id: uuid.UUID,
-    appointmentStatus: AppointmentStatus | None = None,
+    appointment_status: AppointmentStatus | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[Appointment]:
     return service.list_by_business(
-        business_id, appointment_status=appointmentStatus, limit=limit, offset=offset
+        business_id, appointment_status=appointment_status, limit=limit, offset=offset
     )
 
 

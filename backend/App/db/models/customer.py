@@ -100,7 +100,7 @@ class CustomerCreate(CustomerBase):
 
     @field_validator("phone_number")
     @classmethod
-    def check_phone_number(cls, value: str) -> str | None:
+    def check_phone_number(cls, value: str | None) -> str | None:
         if value is None:
             return None
         return normalize_phone(value)

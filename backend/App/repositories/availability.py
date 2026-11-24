@@ -92,7 +92,9 @@ class SQLAvailabilityRepository(AvailabilityRepository):
         statement = (
             select(Availability)
             .where(Availability.member_id == member_id)
-            .order_by(Availability.day, col(Availability.start_time))
+            .order_by(
+                Availability.day, col(Availability.start_time), col(Availability.id)
+            )
             .offset(offset)
             .limit(limit)
         )
@@ -133,6 +135,6 @@ class SQLAvailabilityRepository(AvailabilityRepository):
                 Availability.day == day,
                 Availability.active == True,
             )
-            .order_by(col(Availability.start_time))
+            .order_by(col(Availability.start_time), col(Availability.id))
         )
         return list(self.session.exec(statement).all())

@@ -11,7 +11,7 @@ from App.db.models.customer import (
 )
 from App.dependencies.dependencies import CustomerServiceDep
 
-router = APIRouter(prefix="/business/{business_id}/customer", tags=["customer"])
+router = APIRouter(prefix="/business/{business_id}/customers", tags=["customers"])
 
 
 @router.post("/", response_model=CustomerPublic, status_code=status.HTTP_201_CREATED)

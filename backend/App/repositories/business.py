@@ -2,7 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from App.db.models.business import Business
 
@@ -37,7 +37,12 @@ class SQLBusinessRepository(BusinessRepository):
     def list_all(
         self, *, active: bool | None = None, limit: int = 50, offset: int = 0
     ) -> list[Business]:
-        statement = select(Business).order_by(Business.name).offset(offset).limit(limit)
+        statement = (
+            select(Business)
+            .order_by(Business.name, col(Business.id))
+            .offset(offset)
+            .limit(limit)
+        )
         if active is not None:
             statement = statement.where(Business.active == active)
         return list(self.session.exec(statement).all())

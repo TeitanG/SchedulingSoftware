@@ -58,4 +58,3 @@ class AvailabilityUpdate(SQLModel):
         if value is None:
             raise ValueError("This field cannot be null")
         return value
-

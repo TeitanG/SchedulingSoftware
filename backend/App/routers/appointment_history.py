@@ -10,12 +10,12 @@ from App.db.models.appointment_status_history import (
 from App.dependencies.dependencies import AppointmentStatusHistoryServiceDep
 
 router = APIRouter(
-    prefix="/business/{business_id}/appointments/{appointment_id}",
+    prefix="/business/{business_id}/appointments/{appointment_id}/history",
     tags=["Appointment_Status_History"],
 )
 
 
-@router.get("/", response_model=AppointmentStatusHistoryPublic)
+@router.get("/", response_model=list[AppointmentStatusHistoryPublic])
 def list_by_appointments(
     service: AppointmentStatusHistoryServiceDep,
     business_id: uuid.UUID,

@@ -19,7 +19,7 @@ from App.service.availability import AvailabilityService
 from App.service.business import BusinessService
 from App.service.business_member import BusinessMemberService
 from App.service.customer import CustomerService
-from App.service.service import ServiceService
+from App.service.service import CatalogService
 from App.service.service_provider import ServiceProviderService
 from App.service.user import UserService
 
@@ -42,8 +42,8 @@ def get_business_member_service(session: SessionDep) -> BusinessMemberService:
     )
 
 
-def get_service_service(session: SessionDep) -> ServiceService:
-    return ServiceService(
+def get_service_service(session: SessionDep) -> CatalogService:
+    return CatalogService(
         SQLServiceRepository(session),
         SQLBusinessRepository(session),
     )
@@ -96,7 +96,7 @@ BusinessServiceDep = Annotated[BusinessService, Depends(get_business_service)]
 BusinessMemberServiceDep = Annotated[
     BusinessMemberService, Depends(get_business_member_service)
 ]
-ServiceServiceDep = Annotated[ServiceService, Depends(get_service_service)]
+ServiceServiceDep = Annotated[CatalogService, Depends(get_service_service)]
 ProviderServiceDep = Annotated[ServiceProviderService, Depends(get_provider_service)]
 AvailabilityServiceDep = Annotated[
     AvailabilityService, Depends(get_availability_service)

@@ -27,7 +27,7 @@ class Service(ServiceBase, table=True):
             unique=True,
         ),
         CheckConstraint("length(trim(name)) > 0", name="services_name_not_blank"),
-        CheckConstraint("price_amount >= 0", name="services_price_non_negative"),
+        CheckConstraint("price_amount > 0", name="services_price_positive"),
         CheckConstraint("duration > 0", name="services_duration_positive"),
         CheckConstraint("capacity>= 1", name="services_capacity_min_one"),
     )

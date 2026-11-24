@@ -1,9 +1,8 @@
-
 import uuid
 from abc import ABC, abstractmethod
 
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from App.db.models.service import Service
 
@@ -72,7 +71,7 @@ class SQLServiceRepository(ServiceRepository):
         statement = (
             select(Service)
             .where(Service.business_id == business_id)
-            .order_by(Service.name)
+            .order_by(Service.name, col(Service.id))
             .offset(offset)
             .limit(limit)
         )

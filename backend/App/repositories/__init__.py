@@ -23,7 +23,7 @@ from .customer import (
     SQLCustomerRepository,
 )
 from .provider_service import (
-    ProviderService,
+    ProviderServiceRepository,
     SQLProviderServiceRepository,
 )
 from .service_repository import (
@@ -34,4 +34,3 @@ from .user import (
     SQLUserRepository,
     UserRepository,
 )
-

@@ -10,7 +10,7 @@ from App.db.models.service import Service
 from App.repositories.business_member import BusinessMemberRepository
 from App.repositories.provider_service import ProviderServiceRepository
 from App.repositories.service_repository import ServiceRepository
-from App.service.errors import conflict_message
+from App.service.errors import conflict_message, response_404
 
 UNIQUE_MESSAGES = {
     "provider_services_pkey": "This member already provides this service",
@@ -39,10 +39,7 @@ class ServiceProviderService:
     def _get_service(self, business_id: uuid.UUID, service_id: uuid.UUID) -> Service:
         service = self.service_repo.get(service_id)
         if service is None or service.business_id != business_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Service not found"},
-            )
+            raise response_404("Service")
         return service
 
     def _get_member(
@@ -50,10 +47,8 @@ class ServiceProviderService:
     ) -> BusinessMembers:
         member = self.member_repo.get(member_id)
         if member is None or member.business_id != business_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Member not found"},
-            )
+            raise response_404("Member")
+
         return member
 
     def add_provider(
@@ -64,7 +59,7 @@ class ServiceProviderService:
 
         if not member.is_provider:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                status_code=status.HTTP_409_CONFLICT,
                 detail={"Error": "Member is not a provider"},
             )
         if not member.active or not service.active:

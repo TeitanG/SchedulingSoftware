@@ -12,11 +12,10 @@ from App.db.models.business_members import (
 from App.repositories.business import BusinessRepository
 from App.repositories.business_member import BusinessMemberRepository
 from App.repositories.user import UserRepository
-from App.service.errors import conflict_message
+from App.service.errors import conflict_message, response_404, response_409
 
 UNIQUE_MESSAGES = {
-    "business_members_user_business_unique": "Business with that user or business already exists",
-    "business_member_has_role": "Business members has to have a role",
+    "business_members_user_business_unique": "This user is already a member of this business",
 }
 
 
@@ -44,16 +43,17 @@ class BusinessMemberService:
     ) -> BusinessMembers:
         business = self.business_repo.get(business_id)
         if business is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Business Not found"},
-            )
+            raise response_404("Business")
+
+        if not business.active:
+            raise response_409("Business")
+
         user = self.user_repo.get(data.user_id)
-        if user is None or not user.active:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "User Not found"},
-            )
+        if user is None:
+            raise response_404("User")
+
+        if not user.active:
+            raise response_409("User")
 
         member = BusinessMembers(**data.model_dump(), business_id=business_id)
 
@@ -65,22 +65,14 @@ class BusinessMemberService:
     def get(self, business_id: uuid.UUID, member_id: uuid.UUID) -> BusinessMembers:
         business_member = self.repo.get(member_id)
         if business_member is None or business_member.business_id != business_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Business Member not found"},
-            )
+            raise response_404("Business member")
+
         return business_member
 
     def update(
         self, business_id: uuid.UUID, member_id: uuid.UUID, data: BusinessMembersUpdate
     ) -> BusinessMembers:
         business_member = self.get(business_id, member_id)
-
-        if business_member is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Business not found"},
-            )
 
         changes = data.model_dump(exclude_unset=True)
         is_admin = changes.get("is_admin", business_member.is_admin)
@@ -106,10 +98,7 @@ class BusinessMemberService:
         offset: int = 0,
     ) -> list[BusinessMembers]:
         if self.business_repo.get(business_id) is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Business not found"},
-            )
+            raise response_404("Business")
         return self.repo.list_by_business(
             business_id, active=active, limit=limit, offset=offset
         )

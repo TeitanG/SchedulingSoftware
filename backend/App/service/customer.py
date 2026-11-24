@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from App.db.models.customer import Customer, CustomerCreate, CustomerUpdate
 from App.repositories.business import BusinessRepository
 from App.repositories.customer import CustomerRepository
-from App.service.errors import conflict_message
+from App.service.errors import conflict_message, response_404, response_409
 
 UNIQUE_MESSAGES = {
     "customers_business_email_unique": "A customer with that email already exists in this business",
@@ -35,10 +35,8 @@ class CustomerService:
         customer = self.repo.get(customer_id)
 
         if customer is None or customer.business_id != business_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Customer not found"},
-            )
+            raise response_404("Customer")
+
         return customer
 
     def create(
@@ -49,16 +47,10 @@ class CustomerService:
         business = self.business_repo.get(business_id)
 
         if not business:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Business not found"},
-            )
+            raise response_404("Business")
 
         if not business.active:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={"Error": "Business not active"},
-            )
+            raise response_409("Business")
 
         customer = Customer(
             **data.model_dump(exclude={"consent"}),
@@ -104,15 +96,10 @@ class CustomerService:
         business = self.business_repo.get(business_id)
 
         if business is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Business not found"},
-            )
+            raise response_404("Business")
+
         if not business.active:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={"Error": "Business not active"},
-            )
+            raise response_409("Business")
 
         return self.repo.list_by_business(
             business_id, active=active, limit=limit, offset=offset

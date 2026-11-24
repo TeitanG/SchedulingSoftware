@@ -1,7 +1,6 @@
 import uuid
 from abc import ABC, abstractmethod
 
-from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
 
 from App.db.models.appointment_status_history import AppointmentStatusHistory

@@ -79,7 +79,7 @@ class SQLBusinessMembersRepository(BusinessMemberRepository):
         statement = (
             select(BusinessMembers)
             .where(BusinessMembers.business_id == business_id)
-            .order_by(col(BusinessMembers.created_at))
+            .order_by(col(BusinessMembers.created_at), col(BusinessMembers.id))
             .offset(offset)
             .limit(limit)
         )

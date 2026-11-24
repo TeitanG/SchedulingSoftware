@@ -112,6 +112,7 @@ class SQLAppointmentRepository(AppointmentRepository):
             select(Appointment)
             .join(Service, col(Service.id) == col(Appointment.service_id))
             .where(Appointment.id == appointment_id, Service.business_id == business_id)
+            .order_by(col(Appointment.created_at))
         )
         return self.session.exec(statement).one_or_none()
 

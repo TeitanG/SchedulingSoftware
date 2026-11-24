@@ -23,10 +23,10 @@ router = APIRouter(
 def create_availability(
     Service: AvailabilityServiceDep,
     business_id: uuid.UUID,
-    members_id: uuid.UUID,
+    member_id: uuid.UUID,
     data: AvailabilityCreate,
 ) -> Availability:
-    return Service.create(business_id, members_id, data)
+    return Service.create(business_id, member_id, data)
 
 
 @router.get("/{availability_id}", response_model=AvailabilityPublic)
@@ -53,7 +53,7 @@ def list_availabilities(
     )
 
 
-@router.patch("/", response_model=AvailabilityPublic)
+@router.patch("/{availability_id}", response_model=AvailabilityPublic)
 def update_availability(
     service: AvailabilityServiceDep,
     business_id: uuid.UUID,

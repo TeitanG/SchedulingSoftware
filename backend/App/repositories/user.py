@@ -2,7 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from App.db.models.user import User
 
@@ -37,7 +37,9 @@ class SQLUserRepository(UserRepository):
     def list_all(
         self, *, active: bool | None = None, limit: int = 50, offset: int = 0
     ) -> list[User]:
-        statement = select(User).order_by(User.name).offset(offset).limit(limit)
+        statement = (
+            select(User).order_by(User.name, col(User.id)).offset(offset).limit(limit)
+        )
         if active is not None:
             statement = statement.where(User.active == active)
         return list(self.session.exec(statement).all())

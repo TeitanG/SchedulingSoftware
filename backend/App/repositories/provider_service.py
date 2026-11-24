@@ -63,7 +63,7 @@ class SQLProviderServiceRepository(ProviderServiceRepository):
         statement = (
             select(ProviderService)
             .where(ProviderService.service_id == service_id)
-            .order_by(col(ProviderService.created_at))
+            .order_by(col(ProviderService.created_at), col(ProviderService.member_id))
             .offset(offset)
             .limit(limit)
         )

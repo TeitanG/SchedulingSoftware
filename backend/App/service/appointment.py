@@ -22,7 +22,7 @@ from App.repositories.business_member import BusinessMemberRepository
 from App.repositories.customer import CustomerRepository
 from App.repositories.provider_service import ProviderServiceRepository
 from App.repositories.service_repository import ServiceRepository
-from App.service.errors import conflict_message
+from App.service.errors import conflict_message, response_404, response_409
 
 UNIQUE_MESSAGES = {
     "appointments_booking_code_unique": "Could not generate the booking code, try again",
@@ -81,24 +81,15 @@ class AppointmentService:
         business = self.business.get(business_id)
 
         if not business:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Business not Found"},
-            )
+            raise response_404("Business")
 
         if not business.active:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={"Error": "Business Not active"},
-            )
+            raise response_409("Business")
 
         blocked_provider = self.members.lock_provider(data.provider_id)
 
         if not blocked_provider or blocked_provider.business_id != business_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Provider Not Found"},
-            )
+            raise response_404("Provider")
 
         if not blocked_provider.is_provider:
             raise HTTPException(
@@ -107,24 +98,15 @@ class AppointmentService:
             )
 
         if not blocked_provider.active:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={"Error": "Provider is not active"},
-            )
+            raise response_409("Provider")
 
         service = self.services.get(data.service_id)
 
         if not service or service.business_id != business_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Service not found"},
-            )
+            raise response_404("Service")
 
         if not service.active:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={"Error": "Service is not active"},
-            )
+            raise response_409("Service")
 
         provider_service = self.providers_services.get(
             member_id=blocked_provider.id, service_id=service.id
@@ -139,16 +121,11 @@ class AppointmentService:
         client = self.customers.get(data.client_id)
 
         if not client or client.business_id != business_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "The client does not exist"},
-            )
+            raise response_404("Client")
 
         if not client.active:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={"Error": "This client is not active"},
-            )
+            raise response_409("Client")
+
         ends_at = data.starts_at + timedelta(minutes=service.duration)
 
         if ends_at <= data.starts_at:
@@ -220,10 +197,7 @@ class AppointmentService:
         )
 
         if appointment is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Appointment not found"},
-            )
+            raise response_404("Appointment")
         return appointment
 
     def list_by_business(
@@ -237,10 +211,7 @@ class AppointmentService:
         business = self.business.get(business_id)
 
         if business is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Business not found"},
-            )
+            raise response_404("Business")
 
         return self.repo.list_by_business(
             business_id, status=appointment_status, limit=limit, offset=offset

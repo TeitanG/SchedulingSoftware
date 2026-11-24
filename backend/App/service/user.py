@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from App.db.models import User, UserCreate, UserUpdate
 from App.repositories.user import UserRepository
-from App.service.errors import conflict_message
+from App.service.errors import conflict_message, response_404
 
 UNIQUE_MESSAGES = {"users_email_unique": "A user with that email already exists"}
 
@@ -34,10 +34,7 @@ class UserService:
         user = self.repo.get(user_id)
 
         if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "User not found"},
-            )
+            raise response_404("User")
         return user
 
     def list_all(

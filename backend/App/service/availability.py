@@ -10,6 +10,7 @@ from App.db.models.availability import (
 from App.db.models.business_members import BusinessMembers
 from App.repositories.availability import AvailabilityRepository
 from App.repositories.business_member import BusinessMemberRepository
+from App.service.errors import response_404
 
 
 class AvailabilityService:
@@ -24,10 +25,7 @@ class AvailabilityService:
     ) -> BusinessMembers:
         member = self.member_repo.get(member_id)
         if member is None or member.business_id != business_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Member not found"},
-            )
+            raise response_404("Member")
         return member
 
     def get(
@@ -36,10 +34,7 @@ class AvailabilityService:
         self._get_member(business_id, member_id)
         availability = self.repo.get(availability_id)
         if availability is None or availability.member_id != member_id:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Availability not found"},
-            )
+            raise response_404("Availability")
         return availability
 
     def create(
@@ -49,7 +44,7 @@ class AvailabilityService:
 
         if not member.is_provider:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                status_code=status.HTTP_409_CONFLICT,
                 detail={"Error": "This member is not a provider"},
             )
 
@@ -73,14 +68,14 @@ class AvailabilityService:
 
     def list_by_member(
         self,
-        member_id: uuid.UUID,
         business_id: uuid.UUID,
+        member_id: uuid.UUID,
         *,
         active: bool | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[Availability]:
-        self._get_member(business_id, member_id)
+        self._get_member(business_id=business_id, member_id=member_id)
         return self.repo.list_by_member(
             member_id, active=active, limit=limit, offset=offset
         )

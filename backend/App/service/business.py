@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from App.db.models import Business, BusinessCreate, BusinessUpdate
 from App.repositories.business import BusinessRepository
-from App.service.errors import conflict_message
+from App.service.errors import conflict_message, response_404
 
 UNIQUE_MESSAGES = {
     "businesses_name_unique": "A business with that name already exists",
@@ -36,10 +36,7 @@ class BusinessService:
     def get(self, business_id: uuid.UUID) -> Business:
         business = self.repo.get(business_id)
         if business is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"Error": "Business not found"},
-            )
+            raise response_404("Business")
 
         return business
 
