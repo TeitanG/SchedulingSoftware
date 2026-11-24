@@ -1,6 +1,6 @@
 Decisiones de diseño
 
-    Registro de decisiones y su motivo. Si algo se cambia, añadir una línea nueva con la fecha en vez de borrar la anterior. Última actualización: 2026-11-20.
+    Registro de decisiones y su motivo. Si algo se cambia, añadir una línea nueva con la fecha en vez de borrar la anterior. Última actualización: 2026-11-23.
 
 Base de datos
 
@@ -46,6 +46,60 @@ Modelo de dominio
     (2026-11-20) booking_code: 6 caracteres en formato XXX-XXX con alfabeto sin caracteres confusos (sin I, L, O, 0, 1), generado con secrets. Si choca con appointments_booking_code_unique se responde 409 pidiendo reintentar (31^6 ≈ 887 millones de combinaciones; reintento automático, más adelante si hace falta).
     (2026-11-20) customers.user_id nunca viene del cuerpo de la petición (no está en CustomerCreate ni en CustomerUpdate): lo asigna el servidor a partir del usuario autenticado. Motivo: si se aceptara en el JSON, cualquiera podría vincular un cliente a la cuenta de otra persona. Hasta tener login (JWT), todos los clientes se crean sin cuenta (user_id = NULL).
     (2026-11-20) consent_version lo pone el servidor (constante CONSENT_VERSION en App/service/customer.py, hoy "2026-11-19"). Cuando cambie la política de datos se actualiza la constante: los clientes nuevos guardan la versión nueva y los antiguos conservan la que aceptaron.
+    (2026-11-23) No hay servicios gratuitos: price_amount > 0 en Pydantic (gt=0) y en Postgres (CHECK services_price_positive, migración 8353b73d7dd1, que sustituye a services_price_non_negative). La migración se escribió a mano: el autogenerado de Alembic no detecta cambios dentro de un CHECK.
+
+Autenticación y autorización (2026-11-23)
+
+    Prioridad: seguridad. Ante la duda, la opción que revela menos información y concede menos permisos.
+
+    Contraseñas
+        Se guarda solo el hash (Argon2), en users.password_hash. Nunca la contraseña, nunca en texto plano. password_hash no aparece en ningún modelo Public ni en ninguna respuesta.
+        Hash lento a propósito (Argon2/bcrypt, no SHA-256): hace inviable probar contraseñas en masa si se roba la base de datos.
+
+    Tokens
+        Access token: JWT firmado con SECRET_KEY (en .env, nunca en el código ni en Git). Dura 10 minutos. Contenido mínimo: sub = user_id y exp. El contenido de un JWT se puede leer (no está cifrado): nunca se mete nada sensible.
+        Refresh token (opción A): de larga duración, sirve solo para pedir un access token nuevo sin volver a escribir la contraseña. Motivo: mantener los 10 minutos del access token sin obligar a iniciar sesión cada 10 minutos. Se guarda en la base de datos solo como hash, es de un solo uso (cada uso entrega uno nuevo y anula el anterior) y se puede revocar (cerrar sesión, desactivar cuenta).
+        Se construye en dos pasos: primero login con access token; el refresh token antes de tener usuarios reales.
+        (2026-11-23) Sesión deslizante: el refresh token dura 10 minutos y cada uso entrega uno nuevo de otros 10 minutos. La sesión sigue viva mientras el usuario esté activo y termina tras unos 10–20 minutos de inactividad o al cerrar sesión. Duración máxima absoluta de la sesión: 8 horas, aunque se siga renovando (limita el daño de un refresh token robado).
+        (2026-11-23) Almacenamiento en el frontend: refresh token en una cookie httpOnly (con Secure y SameSite), que el JavaScript de la página no puede leer; access token solo en memoria. Nunca en localStorage ni en caché: cualquier script inyectado (XSS) podría robarlos.
+
+    Login
+        Email inexistente y contraseña incorrecta devuelven el mismo 401 con el mismo mensaje ("Incorrect email or password"): no se revela quién tiene cuenta. Excepción consciente a la regla 404 de la API.
+        Credenciales correctas pero usuario inactivo: se puede decir que la cuenta está inactiva (ya demostró ser el dueño) e indicar el proceso de reactivación.
+        (2026-11-23) Límite de intentos: a partir de 4 fallos, bloqueo temporal y creciente (no cambio de contraseña obligatorio), contando por IP. Motivo: forzar un cambio de contraseña permitiría a cualquiera bloquear a otra persona (por ejemplo, a los admins de un negocio) solo con conocer su email. Pendiente de confirmar: contar por la pareja IP + cuenta (ver TODO.md).
+
+    Registro
+        Libre: cualquiera puede crear una cuenta (POST /users público). Una cuenta nueva no tiene ningún permiso sobre ningún negocio.
+
+    Roles
+        Administrador de la plataforma (el dueño del software): users.is_platform_admin. Es el único que crea negocios, crea y desactiva admins de negocio y reactiva negocios.
+        is_platform_admin no está en UserCreate ni en UserUpdate: ningún endpoint lo puede conceder. Para concederlo se usará un código generado en el servidor, de un solo uso y con caducidad corta, guardado solo como hash e invalidado al usarse. Nunca un secreto fijo en el código, en un script del repositorio ni en el .env. Motivo: si un script o un valor fijo se filtrara, cualquiera podría hacerse administrador de toda la plataforma. (Diseño exacto pendiente, ver TODO.md.)
+        Admin de negocio: crea y desactiva proveedores de su negocio. No puede crear, ascender (is_admin) ni desactivar admins: eso solo lo hace el administrador de la plataforma.
+        Proveedor: atiende citas; sus permisos concretos se definen endpoint por endpoint.
+
+    Códigos de error
+        401: sin token, token inválido o caducado.
+        404: el usuario no es miembro del negocio de la URL, o el negocio no existe. Mismo código en los dos casos para no revelar qué negocios existen (prioridad: seguridad).
+        403: es miembro del negocio, pero su rol no le permite la acción (ya sabe que el negocio existe, no se revela nada).
+
+    Actor
+        El usuario que hace la acción sale siempre del token, nunca del cuerpo de la petición (changed_by del historial, customers.user_id).
+
+    Reactivación
+        Usuarios y clientes: solo mediante verificación por correo electrónico (enlace o código de un solo uso y con caducidad). Requiere enviar correos.
+        Negocios: solo el administrador de la plataforma, directamente.
+
+    Auditoría
+        (2026-11-23) Obligatoria: se registran los intentos de login (fallidos y correctos), los bloqueos y las acciones del administrador de la plataforma (quién, qué, cuándo y desde qué IP).
+
+    Notificaciones
+        (2026-11-23) Se empieza solo con email. Se diseña para crecer: los servicios envían a través de una interfaz abstracta (como los repositorios, con ABC) y el email es la primera implementación; SMS y WhatsApp se añaden después como implementaciones nuevas sin tocar la lógica que las usa.
+
+    Reservas
+        (2026-11-23) En la V1, un cliente llega a reservar mediante el link que cada negocio comparte. No hay listado de negocios (eso es la V2).
+
+    Visión V2 (no entra en la V1)
+        Negocios públicos: un negocio puede marcarse como público y aparecer a cualquier usuario registrado, que puede reservar con él (se crea su Customer con user_id del token). Da visibilidad a los negocios dentro de la plataforma ("publicidad" de clientes). Posible función de pago adicional.
 
 API
 

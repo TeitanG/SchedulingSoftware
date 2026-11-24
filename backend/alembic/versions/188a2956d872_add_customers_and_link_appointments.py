@@ -1,4 +1,4 @@
-"""add customers and link appointments
+"""add password_hash to users.
 
 Revision ID: 188a2956d872
 Revises: a84393442ff3

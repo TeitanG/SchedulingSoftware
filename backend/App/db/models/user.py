@@ -1,12 +1,19 @@
 import uuid
 from datetime import datetime
 
-from pwdlib import PasswordHash
 from pydantic import EmailStr, field_validator
 from sqlalchemy import CheckConstraint, DateTime, Index, text
 from sqlmodel import Field, SQLModel
 
-from .common import EMAIL_MAX, NAME_MAX, clean_name, utc_now
+from .common import (
+    EMAIL_MAX,
+    NAME_MAX,
+    PASSWORD_HASH_MAX,
+    PASSWORD_MAX_LENGTH,
+    PASSWORD_MIN_LENGTH,
+    clean_name,
+    utc_now,
+)
 
 
 class UserBase(SQLModel):
@@ -26,12 +33,14 @@ class User(UserBase, table=True):
     created_at: datetime = Field(
         default_factory=utc_now, sa_type=DateTime(timezone=True)
     )
-    password: PasswordHash
-    password_hash: PasswordHash
+    password_hash: str = Field(max_length=PASSWORD_HASH_MAX)
 
 
 class UserCreate(UserBase):
     email: EmailStr
+    password: str = Field(
+        min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH
+    )
 
     @field_validator("name")
     @classmethod

@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from App.db.models import User, UserCreate, UserUpdate
 from App.repositories.user import UserRepository
+from App.security import hash_password
 from App.service.errors import conflict_message, response_404
 
 UNIQUE_MESSAGES = {"users_email_unique": "A user with that email already exists"}
@@ -24,7 +25,14 @@ class UserService:
         )
 
     def create(self, data: UserCreate) -> User:
-        user = User.model_validate(data)
+
+        user = User(
+            **data.model_dump(exclude={"password_hash"}),
+            password_hash=hash_password(data.password),
+        )
+
+        
+
         try:
             return self.repo.add(user)
         except IntegrityError as error:
