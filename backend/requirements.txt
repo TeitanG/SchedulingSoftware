@@ -9,3 +9,5 @@ email-validator==2.3.0
 scalar-fastapi==1.9.1
 phonenumbers==9.0.42
 pwdlib[argon2]==0.4.2
+pyjwt==2.15.1
+

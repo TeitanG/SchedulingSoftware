@@ -15,6 +15,7 @@ from App.repositories.service_repository import SQLServiceRepository
 from App.repositories.user import SQLUserRepository
 from App.service.appointment import AppointmentService
 from App.service.appointment_history import AppointmentStatusHistoryService
+from App.service.auth import AuthService
 from App.service.availability import AvailabilityService
 from App.service.business import BusinessService
 from App.service.business_member import BusinessMemberService
@@ -91,6 +92,10 @@ def get_appointment_history_service(
     )
 
 
+def get_auth_service(session: SessionDep) -> AuthService:
+    return AuthService(SQLUserRepository(session))
+
+
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 BusinessServiceDep = Annotated[BusinessService, Depends(get_business_service)]
 BusinessMemberServiceDep = Annotated[
@@ -106,3 +111,4 @@ AppointmentServiceDep = Annotated[AppointmentService, Depends(get_appointment_se
 AppointmentStatusHistoryServiceDep = Annotated[
     AppointmentStatusHistoryService, Depends(get_appointment_history_service)
 ]
+AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]

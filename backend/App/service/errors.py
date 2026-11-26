@@ -25,3 +25,18 @@ def response_409(type_of_missing: str):
         status_code=status.HTTP_409_CONFLICT,
         detail={"Error": f"{type_of_missing} not active"},
     )
+
+
+def response_401():
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail={"Error": "Incorrect email or password"},
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+def response_403():
+    return HTTPException(
+        status_code=status.HTTP_403_UNAUTHORIZED,
+        detail={"Error": "Account is inactive"},
+    )

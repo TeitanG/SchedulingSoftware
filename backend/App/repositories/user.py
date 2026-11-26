@@ -2,7 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, func, select
 
 from App.db.models.user import User
 
@@ -24,6 +24,10 @@ class UserRepository(ABC):
 
     @abstractmethod
     def update(self, user: User, changes: dict) -> User:
+        pass
+
+    @abstractmethod
+    def get_by_email(self, email: str) -> User | None:
         pass
 
 
@@ -64,3 +68,8 @@ class SQLUserRepository(UserRepository):
             raise
         self.session.refresh(user)
         return user
+
+    def get_by_email(self, email: str) -> User | None:
+        statement = select(User).where(func.lower(User.email) == email.lower())
+
+        return self.session.exec(statement).one_or_none()

@@ -1,14 +1,33 @@
+import uuid
+from datetime import UTC, datetime, timedelta
+
+import jwt
 from pwdlib import PasswordHash
+from pwdlib.exceptions import UnknownHashError
+
+from App.config import get_settings
 
 password_hasher = PasswordHash.recommended()
 
 
 def hash_password(password: str) -> str:
-    hashed_password = password_hasher.hash(password)
 
-    return hashed_password
+    return password_hasher.hash(password)
 
 
 def verify_password(password: str, password_hash: str) -> bool:
+    try:
+        return password_hasher.verify(password, password_hash)
+    except UnknownHashError:
+        return False
 
-    return password_hasher.verify(password, password_hash)
+
+def create_access_token(user_id: uuid.UUID) -> str:
+    settings = get_settings()
+    expiration = datetime.now(UTC) + timedelta(
+        minutes=settings.access_token_expire_minutes
+    )
+    content = {"sub": str(user_id), "exp": expiration}
+    encode = jwt.encode(content, settings.secret_key, algorithm="HS256")
+
+    return encode

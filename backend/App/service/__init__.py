@@ -4,6 +4,9 @@ from .appointment import (
 from .appointment_history import (
     AppointmentStatusHistoryService,
 )
+from .auth import (
+    AuthService,
+)
 from .availability import (
     AvailabilityService,
 )
@@ -18,6 +21,8 @@ from .customer import (
 )
 from .errors import (
     conflict_message,
+    response_401,
+    response_403,
     response_404,
     response_409,
 )

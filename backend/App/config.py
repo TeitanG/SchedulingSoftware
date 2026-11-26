@@ -8,6 +8,8 @@ class Settings(BaseSettings):
 
     database_url: str
     sql_echo: bool = False
+    secret_key: str
+    access_token_expire_minutes: int = 10
 
 
 @lru_cache

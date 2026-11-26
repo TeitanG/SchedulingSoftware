@@ -27,11 +27,9 @@ class UserService:
     def create(self, data: UserCreate) -> User:
 
         user = User(
-            **data.model_dump(exclude={"password_hash"}),
+            **data.model_dump(exclude={"password"}),
             password_hash=hash_password(data.password),
         )
-
-        
 
         try:
             return self.repo.add(user)

@@ -1,0 +1,19 @@
+from App.repositories.user import UserRepository
+from App.security import create_access_token, verify_password
+from App.service.errors import response_401, response_403
+
+
+class AuthService:
+    def __init__(self, user_repo: UserRepository):
+        self.user_repo = user_repo
+
+    def login(self, email: str, password: str) -> str:
+
+        user = self.user_repo.get_by_email(email)
+
+        if user is None or not verify_password(password, user.password_hash):
+            raise response_401()
+
+        if not user.active:
+            raise response_403()
+        return create_access_token(user.id)

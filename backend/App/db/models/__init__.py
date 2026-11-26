@@ -9,6 +9,10 @@ from .appointment_status_history import (
     AppointmentStatusHistory,
     AppointmentStatusHistoryPublic,
 )
+from .auth import (
+    LoginRequest,
+    TokenResponse,
+)
 from .availability import (
     Availability,
     AvailabilityCreate,

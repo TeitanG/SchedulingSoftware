@@ -5,6 +5,7 @@ from App.routers import provider_service
 from . import (
     appointment,
     appointment_history,
+    auth,
     availability,
     business,
     business_member,
@@ -26,3 +27,4 @@ router.include_router(business_member.router)
 router.include_router(provider_service.router)
 router.include_router(customer.router)
 router.include_router(appointment_history.router)
+router.include_router(auth.router)
