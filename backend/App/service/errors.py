@@ -37,7 +37,7 @@ def response_401_login():
 
 def response_403():
     return HTTPException(
-        status_code=status.HTTP_403_UNAUTHORIZED,
+        status_code=status.HTTP_403_FORBIDDEN,
         detail={"Error": "Account is inactive"},
     )
 
