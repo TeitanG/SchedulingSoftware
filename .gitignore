@@ -25,10 +25,14 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+.graphify-out/*
 
-# --- Claude Code (configuración personal) ---
-CLAUDE.local.md
+# --- (configuración personal) ---
+AUTENTICACION.md
 .claude/settings.local.json
+CLAUDE.local.md
+TODO.md
+
 
 # --- Archivos comprimidos y logs ---
 *.zip

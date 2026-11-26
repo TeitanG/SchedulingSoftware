@@ -51,7 +51,7 @@ It is built with a real product in mind, so the focus is on **data integrity** a
 | Guessable identifiers | UUID primary keys; the readable booking code is a separate field generated with `secrets`. |
 | Schema evolution | Alembic migrations, version-controlled from day one; downgrades that would lose data stop with a clear message instead of deleting it. |
 
-The full design decision log, with the reasoning behind each choice, is in [`backend/docs/DECISIONES.md`](backend/docs/DECISIONES.md) (Spanish).
+The full design decision log, with the reasoning behind each choice, is in [`backend/docs/DECISIONS.md`](backend/docs/DECISIONS.md) (Spanish).
 
 ## Tech stack
 

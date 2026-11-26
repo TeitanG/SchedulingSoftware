@@ -1,6 +1,6 @@
 Contexto del proyecto: SchedulingSoftware (backend)
 
-    Documento para retomar el trabajo en una conversación nueva o para que alguien nuevo entienda el proyecto. Última actualización: 2026-11-18. Las decisiones de diseño y su motivo están en docs/DECISIONES.md.
+    Documento para retomar el trabajo en una conversación nueva o para que alguien nuevo entienda el proyecto. Última actualización: 2026-11-18. Las decisiones de diseño y su motivo están en docs/DECISIONS.md.
 
 1. Qué es
 
