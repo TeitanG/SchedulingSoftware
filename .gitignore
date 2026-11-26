@@ -37,3 +37,4 @@ TODO.md
 # --- Archivos comprimidos y logs ---
 *.zip
 *.log
+*.7z
