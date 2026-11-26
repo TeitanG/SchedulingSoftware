@@ -4,6 +4,7 @@ from App.dependencies.dependencies import (
     AuthServiceDep,
     AvailabilityServiceDep,
     BusinessServiceDep,
+    CurrentUserDep,
     SessionDep,
     UserServiceDep,
 )

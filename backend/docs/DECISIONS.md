@@ -66,14 +66,14 @@ Autenticación y autorización (2026-11-23)
     Login
         Email inexistente y contraseña incorrecta devuelven el mismo 401 con el mismo mensaje ("Incorrect email or password"): no se revela quién tiene cuenta. Excepción consciente a la regla 404 de la API.
         Credenciales correctas pero usuario inactivo: se puede decir que la cuenta está inactiva (ya demostró ser el dueño) e indicar el proceso de reactivación.
-        (2026-11-23) Límite de intentos: a partir de 4 fallos, bloqueo temporal y creciente (no cambio de contraseña obligatorio), contando por IP. Motivo: forzar un cambio de contraseña permitiría a cualquiera bloquear a otra persona (por ejemplo, a los admins de un negocio) solo con conocer su email. Pendiente de confirmar: contar por la pareja IP + cuenta (ver TODO.md).
+        (2026-11-23) Límite de intentos: a partir de 4 fallos, bloqueo temporal y creciente (no cambio de contraseña obligatorio), contando por IP. Motivo: forzar un cambio de contraseña permitiría a cualquiera bloquear a otra persona (por ejemplo, a los admins de un negocio) solo con conocer su email. Pendiente de confirmar: contar por la pareja IP + cuenta, de modo que los fallos desde una IP solo bloqueen esa IP para esa cuenta y un atacante no pueda bloquear al usuario real, que entra desde otra IP.
 
     Registro
         Libre: cualquiera puede crear una cuenta (POST /users público). Una cuenta nueva no tiene ningún permiso sobre ningún negocio.
 
     Roles
         Administrador de la plataforma (el dueño del software): users.is_platform_admin. Es el único que crea negocios, crea y desactiva admins de negocio y reactiva negocios.
-        is_platform_admin no está en UserCreate ni en UserUpdate: ningún endpoint lo puede conceder. Para concederlo se usará un código generado en el servidor, de un solo uso y con caducidad corta, guardado solo como hash e invalidado al usarse. Nunca un secreto fijo en el código, en un script del repositorio ni en el .env. Motivo: si un script o un valor fijo se filtrara, cualquiera podría hacerse administrador de toda la plataforma. (Diseño exacto pendiente, ver TODO.md.)
+        is_platform_admin no está en UserCreate ni en UserUpdate: ningún endpoint lo puede conceder. Para concederlo se usará un código generado en el servidor, de un solo uso y con caducidad corta, guardado solo como hash e invalidado al usarse. Nunca un secreto fijo en el código, en un script del repositorio ni en el .env. Motivo: si un script o un valor fijo se filtrara, cualquiera podría hacerse administrador de toda la plataforma. (Diseño exacto pendiente: quién genera el código y cómo llega a quien lo usa.)
         Admin de negocio: crea y desactiva proveedores de su negocio. No puede crear, ascender (is_admin) ni desactivar admins: eso solo lo hace el administrador de la plataforma.
         Proveedor: atiende citas; sus permisos concretos se definen endpoint por endpoint.
 
@@ -125,7 +125,7 @@ Herramientas y entorno
     ESLint (no Oxlint, por ahora) y Prettier para el frontend; Ruff y Pyright para el backend.
     Frontend: React + TypeScript + Vite, con datos falsos primero y una capa api/ aislada.
     (2026-11-20) graphify-out/ (grafo de conocimiento generado con graphify) va en .gitignore: se regenera, contiene rutas absolutas de la máquina y ensucia los diffs.
-    (2026-11-20) Pendientes del proyecto en docs/TODO.md.
+    (2026-11-25) La lista de pendientes es personal y no forma parte del repositorio.
 
 Negocio
 

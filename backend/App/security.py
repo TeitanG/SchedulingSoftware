@@ -28,6 +28,22 @@ def create_access_token(user_id: uuid.UUID) -> str:
         minutes=settings.access_token_expire_minutes
     )
     content = {"sub": str(user_id), "exp": expiration}
-    encode = jwt.encode(content, settings.secret_key, algorithm="HS256")
+    encode = jwt.encode(content, settings.secret_key, algorithm=settings.algorithm)
 
     return encode
+
+
+def decode_access_token(token: str) -> uuid.UUID | None:
+    settings = get_settings()
+
+    try:
+        payload = jwt.decode(
+            token,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+            options={"require": ["exp", "sub"]},
+        )
+        return uuid.UUID(str(payload["sub"]))
+
+    except (jwt.InvalidTokenError, KeyError, ValueError):
+        return None

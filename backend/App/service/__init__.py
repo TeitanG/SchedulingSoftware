@@ -21,7 +21,8 @@ from .customer import (
 )
 from .errors import (
     conflict_message,
-    response_401,
+    response_401_login,
+    response_401_token,
     response_403,
     response_404,
     response_409,

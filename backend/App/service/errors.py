@@ -27,7 +27,7 @@ def response_409(type_of_missing: str):
     )
 
 
-def response_401():
+def response_401_login():
     return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail={"Error": "Incorrect email or password"},
@@ -39,4 +39,12 @@ def response_403():
     return HTTPException(
         status_code=status.HTTP_403_UNAUTHORIZED,
         detail={"Error": "Account is inactive"},
+    )
+
+
+def response_401_token():
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail={"Error": "Could not validate credentials"},
+        headers={"WWW-Authenticate": "Bearer"},
     )

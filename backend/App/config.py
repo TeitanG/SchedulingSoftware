@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     sql_echo: bool = False
     secret_key: str
     access_token_expire_minutes: int = 10
+    algorithm: str
 
 
 @lru_cache
