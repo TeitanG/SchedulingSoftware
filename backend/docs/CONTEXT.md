@@ -1,6 +1,6 @@
 Contexto del proyecto: SchedulingSoftware (backend)
 
-    Documento para retomar el trabajo en una conversación nueva o para que alguien nuevo entienda el proyecto. Última actualización: 2026-11-18. Las decisiones de diseño y su motivo están en docs/DECISIONS.md.
+    Documento para retomar el trabajo en una conversación nueva o para que alguien nuevo entienda el proyecto. Última actualización: 2026-11-27. Las decisiones de diseño y su motivo están en docs/DECISIONS.md.
 
 1. Qué es
 
@@ -22,6 +22,10 @@ Calidad	Ruff (lint/format) y Pyright (tipos)
 
 DATABASE_URL=postgresql+psycopg://app:app@localhost:5433/scheduling
 SQL_ECHO=true
+SECRET_KEY=<generar con secrets.token_urlsafe(); nunca en Git>
+ACCESS_TOKEN_EXPIRE_MINUTES=10
+
+La plantilla está en backend/.env.example. La app no arranca si faltan DATABASE_URL o SECRET_KEY.
 
 El puerto es 5433 porque el 5432 daba problemas en Windows (probablemente otro Postgres local).
 3. Estructura
@@ -32,17 +36,16 @@ backend/
 ├── scripts/print_ddl.py              ← imprime el CREATE TABLE / CREATE INDEX de todos los modelos
 └── App/
     ├── config.py                     ← Settings (pydantic-settings) + get_settings()
+    ├── security.py                   ← hash de contraseñas (Argon2, pwdlib) y JWT (PyJWT)
     ├── db/
     │   ├── engine.py                 ← engine + get_session()
-    │   └── models/                   ← un archivo por entidad + common.py
-    ├── repositories/
-    │   ├── repositories.py           ← clases abstractas (contratos)
-    │   └── sql_repositories.py       ← implementaciones con SQLModel
-    ├── service/                      ← lógica de negocio, un archivo por entidad + errors.py
-    ├── dependencies/dependencies.py  ← SessionDep y los <X>ServiceDep
-    └── routers/                      ← un router por entidad; __init__.py decide cuáles se incluyen
+    │   └── models/                   ← un archivo por entidad + common.py + auth.py (LoginRequest, TokenResponse)
+    ├── repositories/                 ← un archivo por entidad: clase abstracta (ABC) + implementación SQL<X>Repository
+    ├── service/                      ← lógica de negocio, un archivo por entidad + auth.py + errors.py
+    ├── dependencies/dependencies.py  ← SessionDep, los <X>ServiceDep y CurrentUserDep
+    └── routers/                      ← un router por entidad + auth.py; __init__.py decide cuáles se incluyen
 
-Archivos antiguos de Mongo (schemas/, *_service.py, fastapidependencies.py, core/…) se van borrando a medida que se migra cada entidad. Si un archivo sigue con nombre *_service.py, todavía no está migrado.
+Ya no quedan archivos de Mongo.
 4. El patrón de cada entidad
 
 modelos → repositorio (abstracto + SQL) → servicio → dependencia → router → probar en Scalar
@@ -53,7 +56,7 @@ Clase	Para qué
 <X> (table=True)	La tabla: id, claves foráneas, created_at, updated_at, índices y CHECK. No valida al construirse: nunca se usa para recibir datos de la API
 <X>Create	Entrada del POST. Valida. Sin id, sin created_at, sin ids que vengan de la URL
 <X>Public	Salida de la API (response_model)
-<X>Update	Entrada del PATCH. Todo `
+<X>Update	Entrada del PATCH. Todo opcional (`| None = None`); los campos obligatorios en la tabla rechazan null explícito con reject_null
 
 Validadores compartidos en App/db/models/common.py: utc_now, clean_name, empty_to_none, normalize_phone, validate_timezone, y constantes (NAME_MAX, EMAIL_MAX, PHONE_MAX, DESCRIPTION_MAX…).
 Repositorio
@@ -83,29 +86,39 @@ users	/users	✅
 business_members	/business/{business_id}/members	✅
 services	/business/{business_id}/services	✅
 provider_services	/business/{business_id}/services/{service_id}/providers	✅ (clave compuesta, DELETE real)
-availabilities	/business/{business_id}/members/{member_id}/availabilities	✅ (revisar que el prefix use {member_id})
-appointments + appointment_status_history	—	⏳ Siguiente
-6. Siguiente: citas (appointments)
+availabilities	/business/{business_id}/members/{member_id}/availabilities	✅
+customers	/business/{business_id}/customers	✅ (user_id opcional, nunca del JSON; consentimiento obligatorio)
+appointments	/business/{business_id}/appointments	✅ (cita + primera fila de historial en una sola transacción, FOR UPDATE del proveedor)
+appointment_status_history	/business/{business_id}/appointments/{appointment_id}/history	✅ (solo inserción; changed_by opcional)
+auth	/auth/login, /auth/me	⏳ En curso (ver sección 6)
 
-Las tablas ya existen (migración inicial). Falta todo lo demás. Puntos a resolver:
+Las reglas de las citas (ends_at calculado por el servidor, zona horaria, capacidad, transiciones de estado, booking_code) están en DECISIONS.md → "Citas".
+6. En curso: login y autorización
 
-    Transacciones: crear una cita guarda la cita y su primera fila de historial; deben guardarse las dos o ninguna. El repositorio actual hace commit en cada add, así que hay que cambiar el enfoque para este caso.
-    Zonas horarias: la cita es un instante (TIMESTAMPTZ, UTC). La disponibilidad es hora local del negocio (businesses.timezone). Para validar: convertir starts_at a la zona del negocio → sacar día de la semana y hora local → comparar con availabilities. Nunca usar .replace(tzinfo=None).
-    Cabe en algún bloque: la cita debe caber en alguno de los bloques activos del proveedor ese día (any()), no solo en el primero.
-    Capacidad: contar citas pending/confirmed del mismo proveedor que se solapan y comparar con services.capacity (consulta SQL; índice appointments_provider_starts ya existe).
-    El proveedor ofrece ese servicio (provider_services), y proveedor/servicio activos y del mismo negocio.
-    Transiciones de estado: pending → confirmed | canceled, confirmed → completed | canceled. Cada cambio escribe una fila en el historial.
-    booking_code legible (tipo K7M-29Q), único.
+Hecho:
 
-Pregunta abierta antes de los modelos: ¿quién calcula ends_at? (Recomendación: el servidor, a partir de services.duration.)
+    Paso 1 – Contraseñas: users.password_hash con Argon2 (migración c645a529e598). POST /users recibe la contraseña; el hash nunca sale en una respuesta.
+    Paso 2 – Login: POST /auth/login → access token JWT (HS256, 10 min, sub + exp). Mismo 401 para email inexistente y contraseña incorrecta; 403 si la cuenta está inactiva.
+    Paso 3 – Usuario actual: get_current_user / CurrentUserDep (carga el usuario de la BD en cada petición) y GET /auth/me.
+
+    Paso 4 (parte 1) – Columnas de roles (migración c8fa27da7e9a): users.is_platform_admin y business_members.is_owner, ambas con server_default false y fuera de los modelos Create/Update/Public. Índices únicos parciales business_members_one_owner_per_business (business_id) y business_members_one_business_per_owner (user_id), los dos WHERE is_owner, y CHECK business_members_owner_is_admin (NOT is_owner OR is_admin). El downgrade se detiene si hay dueños o administradores de la plataforma.
+
+Siguiente:
+
+    Paso 4 (parte 2) – Buscar miembro por (user_id, business_id) en el repositorio y dependencia require_member para las rutas /business/{business_id}/....
+    Paso 5 – Proteger cada endpoint según "Permisos por endpoint" de DECISIONS.md. Hasta entonces, las rutas siguen abiertas (cualquiera puede cambiar active de usuarios, etc.).
+    Pasos 6–8 – Refresh token, límite de intentos de login y auditoría.
+
+El detalle de cada paso está en la lista personal de pendientes (docs/TODO.md, fuera de Git).
 7. Pendiente para más adelante
 
     Endpoint de huecos libres (GET .../slots?date=...) para el frontend.
-    Login y permisos (JWT). El actor nunca debe venir del cuerpo de la petición. Hoy cualquiera puede cambiar active de usuarios, etc. changed_by del historial necesita el usuario autenticado.
+    Verificación de email, notificaciones (email primero) y creación pública de negocios.
     Tests con pytest (empezar por la lógica pura).
-    Limpieza: borrar archivos antiguos de Mongo, rehacer requirements.txt (separar requirements-dev.txt), subir los limit por defecto que quedaron en 5, prefijo /business → /businesses (opcional).
+    Limpieza: limit por defecto de 5 en App/routers/business.py → 50, prefijo /business → /businesses (opcional).
     Restricción de solapamiento de disponibilidades a nivel de base de datos (opcional, avanzado).
     Pagos (licencia + mantenimiento): tablas futuras, no afectan al esquema actual.
+    Frontend (React + TypeScript + Vite): todavía no empezado.
 
 8. Comandos del día a día
 
