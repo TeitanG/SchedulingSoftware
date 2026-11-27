@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import field_validator, model_validator
-from sqlalchemy import CheckConstraint, DateTime, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, Index, UniqueConstraint, text
 from sqlmodel import Field, SQLModel
 
 from .common import utc_now
@@ -21,6 +21,21 @@ class BusinessMembers(BusinessMembersBase, table=True):
             "user_id", "business_id", name="business_members_user_business_unique"
         ),
         CheckConstraint("is_admin OR is_provider", name="business_members_has_role"),
+        CheckConstraint(
+            "NOT is_owner OR is_admin", name="business_members_owner_is_admin"
+        ),
+        Index(
+            "business_members_one_business_per_owner",
+            "user_id",
+            unique=True,
+            postgresql_where=text("is_owner"),
+        ),
+        Index(
+            "business_members_one_owner_per_business",
+            "business_id",
+            unique=True,
+            postgresql_where=text("is_owner"),
+        ),
     )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -29,6 +44,9 @@ class BusinessMembers(BusinessMembersBase, table=True):
 
     created_at: datetime = Field(
         default_factory=utc_now, sa_type=DateTime(timezone=True)
+    )
+    is_owner: bool = Field(
+        default=False, sa_column_kwargs={"server_default": text("false")}
     )
 
 

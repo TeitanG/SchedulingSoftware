@@ -16,6 +16,8 @@ from App.service.errors import conflict_message, response_404, response_409
 
 UNIQUE_MESSAGES = {
     "business_members_user_business_unique": "This user is already a member of this business",
+    "business_members_one_owner_per_business": "This business already has an owner",
+    "business_members_one_business_per_owner": "This user already owns a business",
 }
 
 

@@ -34,6 +34,9 @@ class User(UserBase, table=True):
         default_factory=utc_now, sa_type=DateTime(timezone=True)
     )
     password_hash: str = Field(max_length=PASSWORD_HASH_MAX)
+    is_platform_admin: bool = Field(
+        default=False, sa_column_kwargs={"server_default": text("false")}
+    )
 
 
 class UserCreate(UserBase):
